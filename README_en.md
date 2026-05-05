@@ -437,7 +437,3 @@ Multi-document layout must also satisfy:
 - If the project gitignores the handoff document, make sure the team understands that it is local state.
 - Hooks are optional reinforcement. They should not replace the agent's responsibility to close out properly.
 - `bootstrap_handoff.py` does not overwrite an existing `AGENT_HANDOFF.md`; existing state must be repaired from repository facts.
-
-## License
-
-Use this under your repository's license. If the repository does not have a license yet, consider adding an explicit open-source license such as MIT.

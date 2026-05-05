@@ -438,6 +438,3 @@ AGENT_HANDOFF.md
 - hook 只是可选增强，不应该替代 Agent 自己的 closeout 责任。
 - `bootstrap_handoff.py` 不会覆盖已有 `AGENT_HANDOFF.md`，因为已有接力状态必须由 Agent 基于仓库事实修复。
 
-## License
-
-按你的仓库 License 使用。如果你还没有添加 License，建议在 GitHub 上选择一个明确的开源许可证，例如 MIT。
