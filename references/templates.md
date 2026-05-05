@@ -2,6 +2,8 @@
 
 Use these templates when creating or repairing repository-local handoff files. Replace placeholders with repository facts. Use `UNKNOWN` when a fact cannot be verified.
 
+For project-level agent rules, use `references/codex-rules.md` for Codex `AGENTS.md` and `references/claude-rules.md` for Claude Code `.claude/CLAUDE.md`.
+
 ## AGENT_HANDOFF.md
 
 ````markdown

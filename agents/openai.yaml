@@ -1,4 +1,4 @@
 interface:
   display_name: "Agent Handoff"
-  short_description: "Create and maintain durable repository handoff docs."
-  default_prompt: "Create or repair a durable Agent handoff mechanism for this repository."
+  short_description: "Create Codex AGENTS.md and Claude Code handoff rules with durable repo memory."
+  default_prompt: "Use the cross-platform agent-handoff skill to create or repair AGENT_HANDOFF.md, Codex AGENTS.md rules, and Claude Code .claude/CLAUDE.md rules for this repository."

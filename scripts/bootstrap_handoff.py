@@ -3,7 +3,8 @@
 
 This script is intentionally conservative:
 - It creates AGENT_HANDOFF.md only when missing.
-- It creates or updates a marked handoff protocol block in .claude/CLAUDE.md.
+- It creates or updates a marked handoff protocol block in AGENTS.md for Codex.
+- It creates or updates a marked handoff protocol block in .claude/CLAUDE.md for Claude Code.
 - It creates optional support files only when requested.
 - It does not overwrite existing handoff state.
 """
@@ -65,6 +66,7 @@ def handoff_template(repo: Path) -> str:
   - Inspect repository-specific files and replace `UNKNOWN` entries with verified facts.
 - Active files:
   - `AGENT_HANDOFF.md`
+  - `AGENTS.md`
   - `.claude/CLAUDE.md`
 - Blockers: none
 - Open questions:
@@ -107,7 +109,8 @@ def handoff_template(repo: Path) -> str:
 - Objective: Establish durable Agent handoff mechanism.
 - Changed files:
   - `AGENT_HANDOFF.md`: Created initial durable handoff state.
-  - `.claude/CLAUDE.md`: Created or updated project-level handoff rules if enabled.
+  - `AGENTS.md`: Created or updated Codex project-level handoff rules if enabled.
+  - `.claude/CLAUDE.md`: Created or updated Claude Code project-level handoff rules if enabled.
 - Result: Initial handoff mechanism scaffolded.
 - Remaining risks: Repository-specific context still contains `UNKNOWN` until source files are inspected.
 
@@ -147,10 +150,7 @@ Also update `Current Work Log`, `Decision Log`, `Validation History`, and `Task 
 """
 
 
-CLAUDE_BLOCK = f"""{START}
-# Agent Handoff Protocol
-
-## Required Startup Routine
+COMMON_RULE_BODY = """## Required Startup Routine
 
 Before making a plan or editing files, read:
 
@@ -172,7 +172,7 @@ To avoid stale snippets, line-number drift, or large unnecessary reads:
 2. Confirm file size before reading large or volatile files, using line counts or targeted searches when needed.
 3. Search for exact targets first, then read small exact ranges around those targets.
 4. Keep read ranges small unless the file is known to be short.
-5. If a read method becomes unreliable, use shell verification commands such as `wc -l`, `rg -n`, and `sed -n '<start>,<end>p'` with quoted paths.
+5. If a read method becomes unreliable, use shell verification commands such as `wc -l`, `rg -n`, and small-range reads with quoted paths.
 6. Do not propose or edit code based on uncertain offsets; re-anchor with search results first.
 
 ## Durable Handoff Memory
@@ -223,7 +223,21 @@ If the task was purely conversational and no project state changed, no file upda
 
 ## Session Closeout Checklist
 
-Before final response, update `AGENT_HANDOFF.md` with final task status, files changed, commands/checks run and outcomes, and remaining risks, blockers, open questions, or next steps.
+Before final response, update `AGENT_HANDOFF.md` with final task status, files changed, commands/checks run and outcomes, and remaining risks, blockers, open questions, or next steps."""
+
+
+CODEX_BLOCK = f"""{START}
+# Codex Agent Handoff Protocol
+
+{COMMON_RULE_BODY}
+{END}
+"""
+
+
+CLAUDE_BLOCK = f"""{START}
+# Claude Code Agent Handoff Protocol
+
+{COMMON_RULE_BODY}
 {END}
 """
 
@@ -326,9 +340,16 @@ def merge_readonly_permissions(repo: Path, dry_run: bool, changed: list[str]) ->
 def main() -> int:
     parser = argparse.ArgumentParser(description="Bootstrap Agent handoff files for a repository.")
     parser.add_argument("--repo", default=".", help="Repository root. Defaults to current directory.")
+    parser.add_argument(
+        "--platform",
+        choices=["codex", "claude", "both"],
+        default="both",
+        help="Project rule target: codex updates AGENTS.md, claude updates .claude/CLAUDE.md, both updates both.",
+    )
     parser.add_argument("--session-prompts", action="store_true", help="Create AGENT_SESSION_PROMPTS.md if missing.")
     parser.add_argument("--gitignore", action="store_true", help="Add local handoff files to .gitignore if missing.")
-    parser.add_argument("--allow-readonly", action="store_true", help="Merge safe read-only query permissions into .claude/settings.json.")
+    parser.add_argument("--allow-readonly", action="store_true", help="Claude Code only: merge safe read-only query permissions into .claude/settings.json.")
+    parser.add_argument("--skip-codex-rules", action="store_true", help="Do not create or update AGENTS.md.")
     parser.add_argument("--skip-claude-rules", action="store_true", help="Do not create or update .claude/CLAUDE.md.")
     parser.add_argument("--dry-run", action="store_true", help="Print planned changes without writing files.")
     args = parser.parse_args()
@@ -346,7 +367,15 @@ def main() -> int:
     else:
         write_text(handoff, handoff_template(repo), args.dry_run, changed)
 
-    if not args.skip_claude_rules:
+    write_codex = args.platform in ("codex", "both") and not args.skip_codex_rules
+    write_claude = args.platform in ("claude", "both") and not args.skip_claude_rules
+
+    if write_codex:
+        codex_path = repo / "AGENTS.md"
+        updated = replace_marked_block(read_text(codex_path), CODEX_BLOCK)
+        write_text(codex_path, updated, args.dry_run, changed)
+
+    if write_claude:
         claude_path = repo / ".claude" / "CLAUDE.md"
         updated = replace_marked_block(read_text(claude_path), CLAUDE_BLOCK)
         write_text(claude_path, updated, args.dry_run, changed)

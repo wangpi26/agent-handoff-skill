@@ -4,7 +4,7 @@ Use this reference when reviewing, repairing, compressing, or validating a repos
 
 ## Standard Maintenance Flow
 
-1. Initialization: inspect repository structure, create or update `AGENT_HANDOFF.md`, merge project-level handoff rules, optionally create `AGENT_SESSION_PROMPTS.md`.
+1. Initialization: inspect repository structure, create or update `AGENT_HANDOFF.md`, merge project-level handoff rules into Codex `AGENTS.md` and/or Claude Code `.claude/CLAUDE.md`, optionally create `AGENT_SESSION_PROMPTS.md`.
 2. Session start: explicitly read `AGENT_HANDOFF.md`, determine the active subproject, then inspect only task-relevant source files.
 3. During work: update snapshot when objective/status changes, record decisions with reasons and evidence, record blockers and risks when they appear.
 4. Closeout: update work log, validation history, next steps, risks, blockers, and stale state before final response.
