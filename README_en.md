@@ -37,11 +37,19 @@ When AI coding agents are used on real projects over long periods, the hardest f
 
 ## What It Creates
 
-The default mechanism consists of a few repository-local files:
+The default mechanism is now a **multi-document layout**, while the legacy single-document layout remains supported.
 
 | File | Purpose |
 | --- | --- |
-| `AGENT_HANDOFF.md` | The durable repository handoff document. Tracks current objective, status, files, decisions, validation, risks, and next steps. |
+| `AGENT_HANDOFF.md` | In multi layout, the index and recovery route. In single layout, the full handoff state file. |
+| `.agent-handoff/snapshot.md` | Current objective, status, next actions, active files, blockers, and open questions. |
+| `.agent-handoff/workspace.md` | Repository map, entry points, test commands, docs, and stable project context. |
+| `.agent-handoff/decisions.md` | Important decisions with reasons and evidence. |
+| `.agent-handoff/work-log.md` | Recent operational work log. |
+| `.agent-handoff/validation.md` | Validation commands, results, failures, and intentionally skipped checks. |
+| `.agent-handoff/backlog.md` | Pending work and follow-ups. |
+| `.agent-handoff/risks.md` | Risks, blockers, `UNKNOWN` items, and confirmations needed. |
+| `.agent-handoff/archive.md` | Compressed old history that is not part of normal recovery. |
 | `AGENTS.md` | Codex project instructions file. Stores the handoff maintenance rules that Codex reads for the repository. |
 | `.claude/CLAUDE.md` | Recommended project-level Claude Code rules. Requires future agents to read and maintain the handoff document. |
 | `AGENT_SESSION_PROMPTS.md` | Optional reusable prompts for new-window startup, task continuation, closeout, and handoff quality review. |
@@ -67,10 +75,22 @@ The skill creates a loop:
 1. **Inspect**: Read the repository shape before writing templates.
 2. **Bootstrap**: Create or merge the necessary handoff files and project rules.
 3. **Maintain**: During work, record objectives, decisions, active files, validation, and risks.
-4. **Closeout**: Before finishing any non-trivial task, refresh `AGENT_HANDOFF.md`.
+4. **Closeout**: Before finishing any non-trivial task, refresh `AGENT_HANDOFF.md` or the relevant `.agent-handoff/` files.
 5. **Recover**: The next agent starts from the handoff document, then reads only the source files needed for the current task.
 
-The point is not to make agents read less source code. The point is to make agents read less irrelevant history. `AGENT_HANDOFF.md` tells the next agent where the task stands, why it is there, and what to do next. Implementation details still need to be verified from source files and tests.
+The point is not to make agents read less source code. The point is to make agents read less irrelevant history. `AGENT_HANDOFF.md` tells the next agent where to start reading. Implementation details still need to be verified from source files and tests.
+
+In multi-document layout, the recovery reading order is:
+
+1. `AGENT_HANDOFF.md`
+2. `.agent-handoff/snapshot.md`
+3. `.agent-handoff/risks.md`
+4. `.agent-handoff/backlog.md`
+5. `.agent-handoff/validation.md`, only when validation state affects the current task
+6. `.agent-handoff/decisions.md`, only when changing architecture, behavior, dependencies, or prior decisions
+7. `.agent-handoff/workspace.md`, only when orientation, commands, or subproject boundaries are needed
+8. `.agent-handoff/work-log.md`, only when recent implementation details are needed
+9. `.agent-handoff/archive.md`, only when old context is explicitly needed
 
 ## Main Use Cases
 
@@ -217,7 +237,7 @@ Use project-level installation for team-standard workflows. Use personal install
 You can also run the bootstrap script directly:
 
 ```powershell
-python scripts\bootstrap_handoff.py --repo E:\path\to\your\repo --platform both --session-prompts --gitignore
+python scripts\bootstrap_handoff.py --repo E:\path\to\your\repo --platform both --layout multi --session-prompts --gitignore
 ```
 
 Common flags:
@@ -226,6 +246,7 @@ Common flags:
 | --- | --- |
 | `--repo <path>` | Target repository root. Defaults to the current directory. |
 | `--platform codex\|claude\|both` | Project rule target. `codex` updates `AGENTS.md`, `claude` updates `.claude/CLAUDE.md`, and `both` updates both. |
+| `--layout single\|multi` | Handoff structure. `multi` is the recommended default; `single` preserves the legacy one-file layout. |
 | `--session-prompts` | Create `AGENT_SESSION_PROMPTS.md` if missing. |
 | `--gitignore` | Add `AGENT_HANDOFF.md` and `AGENT_SESSION_PROMPTS.md` to `.gitignore`. |
 | `--allow-readonly` | Claude Code only: merge safe read-only query permissions into `.claude/settings.json`. |
@@ -236,7 +257,7 @@ Common flags:
 Example:
 
 ```powershell
-python scripts\bootstrap_handoff.py --repo E:\_workspace\my-saas --platform both --session-prompts --gitignore --dry-run
+python scripts\bootstrap_handoff.py --repo E:\_workspace\my-saas --platform both --layout multi --session-prompts --gitignore --dry-run
 ```
 
 Review the output, then rerun without `--dry-run`.
@@ -319,6 +340,21 @@ agent-handoff/
     bootstrap_handoff.py
 ```
 
+Multi layout creates this structure in the target project:
+
+```text
+AGENT_HANDOFF.md
+.agent-handoff/
+  snapshot.md
+  workspace.md
+  decisions.md
+  work-log.md
+  validation.md
+  backlog.md
+  risks.md
+  archive.md
+```
+
 Responsibilities:
 
 - `SKILL.md`: Runtime entry point. Keep it short. It contains trigger description, workflow, resource navigation, and boundaries.
@@ -327,7 +363,7 @@ Responsibilities:
 - `references/claude-rules.md`: Claude Code `.claude/CLAUDE.md` handoff rule block.
 - `references/hooks.md`: Optional hook enforcement examples.
 - `references/quality.md`: Quality standards for reviewing, repairing, and compressing handoff documents.
-- `scripts/bootstrap_handoff.py`: Conservative setup script. Creates missing files and idempotently merges rules.
+- `scripts/bootstrap_handoff.py`: Conservative setup script. Creates missing files, single or multi handoff layouts, and idempotently merges rules.
 - `README.md` / `README_en.md`: GitHub documentation. Not required at runtime.
 
 ## Design Principles
@@ -384,6 +420,16 @@ A good `AGENT_HANDOFF.md` should satisfy:
 - It contains no secrets, long logs, full code blocks, or chat transcripts.
 - Unknown information is marked as `UNKNOWN`.
 - It reduces irrelevant reading but does not replace source verification.
+
+Multi-document layout must also satisfy:
+
+- `AGENT_HANDOFF.md` is only an index and recovery route, not a task log.
+- `snapshot.md` is short and explains current objective, status, next action, active files, and blockers.
+- `risks.md` contains all active risks, blockers, and `UNKNOWN` items.
+- `backlog.md` contains actionable pending work, not completed stale items.
+- `validation.md` clearly records passed, failed, and not-run checks.
+- `decisions.md` includes reasons and evidence for every durable decision.
+- A new agent can recover the previous agent's state by reading the index, snapshot, risks, backlog, and only the necessary validation/decision files.
 
 ## Notes
 

@@ -1,6 +1,6 @@
 # Optional Hook Enforcement
 
-Use hooks only when the user asks for stronger enforcement than written project rules. Hooks should check and remind; they should not auto-generate complex handoff content because that risks writing false state.
+Use hooks only when the user asks for stronger enforcement than written project rules. Hooks should check and remind; they should not auto-generate complex handoff content because that risks writing false state. The example supports both single-document and multi-document handoff layouts.
 
 ## Principles
 
@@ -65,6 +65,7 @@ import path from "node:path";
 
 const projectDir = process.env.CLAUDE_PROJECT_DIR || process.cwd();
 const handoffPath = path.join(projectDir, "AGENT_HANDOFF.md");
+const handoffDir = path.join(projectDir, ".agent-handoff");
 
 function json(message) {
   process.stdout.write(JSON.stringify(message));
@@ -84,13 +85,29 @@ try {
   const content = fs.readFileSync(handoffPath, "utf8");
   const missing = [];
 
-  for (const heading of [
-    "## Handoff Snapshot",
-    "## Current Work Log",
-    "## Validation History",
-    "## Task Backlog"
-  ]) {
-    if (!content.includes(heading)) missing.push(heading);
+  if (fs.existsSync(handoffDir)) {
+    for (const rel of [
+      "snapshot.md",
+      "workspace.md",
+      "decisions.md",
+      "work-log.md",
+      "validation.md",
+      "backlog.md",
+      "risks.md",
+      "archive.md"
+    ]) {
+      if (!fs.existsSync(path.join(handoffDir, rel))) missing.push(`.agent-handoff/${rel}`);
+    }
+    if (!content.includes("## Recovery Reading Order")) missing.push("AGENT_HANDOFF.md Recovery Reading Order");
+  } else {
+    for (const heading of [
+      "## Handoff Snapshot",
+      "## Current Work Log",
+      "## Validation History",
+      "## Task Backlog"
+    ]) {
+      if (!content.includes(heading)) missing.push(heading);
+    }
   }
 
   const reminders = [];
@@ -101,7 +118,7 @@ try {
     decision: "approve",
     reason: reminders.length
       ? reminders.join(" ") + " Update the handoff before final response if repository state changed."
-      : "AGENT_HANDOFF.md exists and has the expected core sections."
+      : "Handoff files exist and have the expected core structure."
   });
 } catch (error) {
   json({

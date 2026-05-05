@@ -37,11 +37,19 @@
 
 ## 它创建什么
 
-默认机制由几类文件组成：
+默认机制现在是 **多文档结构**，同时保留旧版单文档模式。
 
 | 文件 | 作用 |
 | --- | --- |
-| `AGENT_HANDOFF.md` | 仓库级持久接力文档，记录当前目标、状态、文件、决策、验证、风险和下一步。 |
+| `AGENT_HANDOFF.md` | 多文档模式下是入口索引和恢复路线；单文档模式下保存全部接力状态。 |
+| `.agent-handoff/snapshot.md` | 多文档模式下保存当前目标、状态、下一步、活跃文件、阻塞点和开放问题。 |
+| `.agent-handoff/workspace.md` | 项目结构、入口、测试命令、文档和长期项目背景。 |
+| `.agent-handoff/decisions.md` | 重要决策、原因和证据。 |
+| `.agent-handoff/work-log.md` | 近期仍有操作价值的工作日志。 |
+| `.agent-handoff/validation.md` | 验证命令、结果、失败原因和未跑测试说明。 |
+| `.agent-handoff/backlog.md` | 待办和 follow-up。 |
+| `.agent-handoff/risks.md` | 风险、阻塞点、`UNKNOWN` 和需要确认的信息。 |
+| `.agent-handoff/archive.md` | 压缩后的旧历史，不参与默认恢复。 |
 | `AGENTS.md` | Codex 项目级 instructions 文件，写入 Codex 会读取的接力维护规则。 |
 | `.claude/CLAUDE.md` | 项目级 Claude Code 规则，要求未来 Agent 启动时读取接力文档，并在收尾前更新。 |
 | `AGENT_SESSION_PROMPTS.md` | 可选文件，保存新窗口启动、继续任务、收尾、接力质量审查等常用提示词。 |
@@ -67,10 +75,22 @@
 1. **Inspect**：先看仓库结构，不直接写模板。
 2. **Bootstrap**：创建或合并必要的接力文件和项目规则。
 3. **Maintain**：任务过程中持续记录目标、决策、活跃文件、验证和风险。
-4. **Closeout**：非纯聊天任务结束前，主动刷新 `AGENT_HANDOFF.md`。
+4. **Closeout**：非纯聊天任务结束前，主动刷新 `AGENT_HANDOFF.md` 或相关 `.agent-handoff/` 文件。
 5. **Recover**：下一位 Agent 从接力文档恢复状态，再按需读取源码。
 
-这个闭环的重点不是让 Agent 少读源码，而是让 Agent 少读无关历史。`AGENT_HANDOFF.md` 只负责告诉下一位 Agent “现在在哪里、为什么到这里、下一步做什么”，具体实现仍然必须从源码和测试中验证。
+这个闭环的重点不是让 Agent 少读源码，而是让 Agent 少读无关历史。`AGENT_HANDOFF.md` 只负责告诉下一位 Agent “从哪里开始读”，具体实现仍然必须从源码和测试中验证。
+
+多文档模式下，恢复读取顺序是：
+
+1. `AGENT_HANDOFF.md`
+2. `.agent-handoff/snapshot.md`
+3. `.agent-handoff/risks.md`
+4. `.agent-handoff/backlog.md`
+5. `.agent-handoff/validation.md`，仅当验证状态影响当前任务
+6. `.agent-handoff/decisions.md`，仅当要修改架构、行为、依赖或既有决策
+7. `.agent-handoff/workspace.md`，仅当需要项目结构、命令或子项目边界
+8. `.agent-handoff/work-log.md`，仅当需要近期实现细节
+9. `.agent-handoff/archive.md`，仅当确实需要旧历史
 
 ## 主要应用场景
 
@@ -217,7 +237,7 @@ git clone https://github.com/<your-name>/agent-handoff-skill.git .claude\skills\
 如果你不想注册为 skill，也可以直接运行脚本：
 
 ```powershell
-python scripts\bootstrap_handoff.py --repo E:\path\to\your\repo --platform both --session-prompts --gitignore
+python scripts\bootstrap_handoff.py --repo E:\path\to\your\repo --platform both --layout multi --session-prompts --gitignore
 ```
 
 常用参数：
@@ -226,6 +246,7 @@ python scripts\bootstrap_handoff.py --repo E:\path\to\your\repo --platform both 
 | --- | --- |
 | `--repo <path>` | 目标仓库根目录，默认当前目录。 |
 | `--platform codex\|claude\|both` | 项目规则目标。`codex` 更新 `AGENTS.md`，`claude` 更新 `.claude/CLAUDE.md`，`both` 同时更新两者。 |
+| `--layout single\|multi` | 接力结构。`multi` 是默认推荐模式；`single` 保留旧版单文档结构。 |
 | `--session-prompts` | 如果缺失则创建 `AGENT_SESSION_PROMPTS.md`。 |
 | `--gitignore` | 把 `AGENT_HANDOFF.md` 和 `AGENT_SESSION_PROMPTS.md` 加入 `.gitignore`。 |
 | `--allow-readonly` | Claude Code 专用：合并安全只读查询权限到 `.claude/settings.json`。 |
@@ -236,7 +257,7 @@ python scripts\bootstrap_handoff.py --repo E:\path\to\your\repo --platform both 
 示例：
 
 ```powershell
-python scripts\bootstrap_handoff.py --repo E:\_workspace\my-saas --platform both --session-prompts --gitignore --dry-run
+python scripts\bootstrap_handoff.py --repo E:\_workspace\my-saas --platform both --layout multi --session-prompts --gitignore --dry-run
 ```
 
 确认输出后再去掉 `--dry-run`。
@@ -301,6 +322,7 @@ python scripts\bootstrap_handoff.py --repo . --allow-readonly
 agent-handoff/
   SKILL.md
   README.md
+  README_en.md
   agents/
     openai.yaml
   assets/
@@ -318,6 +340,21 @@ agent-handoff/
     bootstrap_handoff.py
 ```
 
+多文档模式会在目标项目中创建：
+
+```text
+AGENT_HANDOFF.md
+.agent-handoff/
+  snapshot.md
+  workspace.md
+  decisions.md
+  work-log.md
+  validation.md
+  backlog.md
+  risks.md
+  archive.md
+```
+
 各部分职责：
 
 - `SKILL.md`：运行时入口。越短越好，只放触发说明、核心流程、资源导航和边界。
@@ -326,8 +363,8 @@ agent-handoff/
 - `references/claude-rules.md`：Claude Code `.claude/CLAUDE.md` handoff 规则区块。
 - `references/hooks.md`：可选 hook 强约束示例。
 - `references/quality.md`：审查、修复、压缩接力文档时使用的质量标准。
-- `scripts/bootstrap_handoff.py`：保守的初始化脚本，负责创建缺失文件和幂等合并规则。
-- `README.md`：GitHub 展示文档，不参与 skill 运行。
+- `scripts/bootstrap_handoff.py`：保守的初始化脚本，负责创建缺失文件、多文档或单文档结构，以及幂等合并规则。
+- `README.md` / `README_en.md`：GitHub 展示文档，不参与 skill 运行。
 
 ## 设计原则
 
@@ -383,6 +420,16 @@ agent-handoff/
 - 没有密钥、长日志、完整代码块或聊天流水账。
 - 不确定内容明确标为 `UNKNOWN`。
 - 它减少无关阅读，但不替代源码验证。
+
+多文档模式还必须满足：
+
+- `AGENT_HANDOFF.md` 只是索引和读取路线，不堆任务日志。
+- `snapshot.md` 足够短，能说明当前目标、状态、下一步、活跃文件、阻塞点。
+- `risks.md` 包含所有仍有效的风险、阻塞和 `UNKNOWN`。
+- `backlog.md` 是可执行待办，不保留已完成旧项。
+- `validation.md` 清楚记录 passed、failed、not run。
+- `decisions.md` 的每个决策都有原因和证据。
+- 新 Agent 只读入口索引、snapshot、risks、backlog、必要 validation/decisions，就能恢复前一个 Agent 的工作状态。
 
 ## 注意事项
 

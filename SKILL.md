@@ -1,6 +1,6 @@
 ---
 name: agent-handoff
-description: Cross-platform Codex and Claude Code skill for creating, updating, repairing, or reviewing durable repository handoff mechanisms. Use when the user asks to bootstrap cross-session project memory, create or maintain AGENT_HANDOFF.md, add Codex AGENTS.md rules, add Claude Code .claude/CLAUDE.md rules, create reusable session prompts, enforce closeout, repair stale handoff state, or review handoff quality. Install under ~/.codex/skills/agent-handoff for Codex, ~/.claude/skills/agent-handoff for Claude Code personal use, or repo/.claude/skills/agent-handoff for Claude Code project use.
+description: Cross-platform Codex and Claude Code skill for creating, updating, repairing, or reviewing durable repository handoff mechanisms. Supports single-document and multi-document layouts. Use when the user asks to bootstrap cross-session project memory, create or maintain AGENT_HANDOFF.md and .agent-handoff state files, add Codex AGENTS.md rules, add Claude Code .claude/CLAUDE.md rules, create reusable session prompts, enforce closeout, repair stale handoff state, or review handoff quality. Install under ~/.codex/skills/agent-handoff for Codex, ~/.claude/skills/agent-handoff for Claude Code personal use, or repo/.claude/skills/agent-handoff for Claude Code project use.
 ---
 
 # Agent Handoff
@@ -19,6 +19,12 @@ The handoff mechanism is repository-local by default. Do not edit user-level `~/
 
 The same `SKILL.md`, `references/`, and `scripts/` are shared across platforms. `agents/openai.yaml` is Codex UI metadata and is not required by Claude Code.
 
+## Layout Choice
+
+- `multi` layout is the default for real projects. It creates `AGENT_HANDOFF.md` as a short index and `.agent-handoff/*.md` for state files.
+- `single` layout is the legacy compact mode for small projects. It keeps all recovery state in `AGENT_HANDOFF.md`.
+- Do not force-migrate an existing `AGENT_HANDOFF.md`. If it exists, preserve it and repair or migrate manually from repository facts.
+
 ## Workflow
 
 1. Inspect the repository before writing files.
@@ -31,6 +37,7 @@ The same `SKILL.md`, `references/`, and `scripts/` are shared across platforms. 
 ## Default Files
 
 - `AGENT_HANDOFF.md`: Required durable handoff state at the repository root.
+- `.agent-handoff/`: Multi-document layout directory for snapshot, workspace, decisions, work log, validation, backlog, risks, and archive.
 - `AGENTS.md`: Recommended Codex project instructions file. Merge a marked handoff protocol block; do not overwrite unrelated project guidance.
 - `.claude/CLAUDE.md`: Recommended project-level Claude Code rules generated for repositories that use Claude Code. Merge a marked handoff protocol block; do not overwrite unrelated rules.
 - `AGENT_SESSION_PROMPTS.md`: Optional reusable prompts for new window startup, continuation, closeout, and quality review.
@@ -56,13 +63,14 @@ Do not overwrite an existing `AGENT_HANDOFF.md` with a template. Existing handof
 Use the script for deterministic setup:
 
 ```bash
-python <skill-dir>/scripts/bootstrap_handoff.py --repo <repo-root> --platform both --session-prompts --gitignore
+python <skill-dir>/scripts/bootstrap_handoff.py --repo <repo-root> --platform both --layout multi --session-prompts --gitignore
 ```
 
 Useful flags:
 
 - `--repo <path>`: Target repository root. Defaults to the current working directory.
 - `--platform codex|claude|both`: Project rule target. `codex` updates `AGENTS.md`; `claude` updates `.claude/CLAUDE.md`; `both` updates both.
+- `--layout single|multi`: Handoff structure. `multi` is default; `single` preserves the legacy single-file layout.
 - `--session-prompts`: Create `AGENT_SESSION_PROMPTS.md` if missing.
 - `--gitignore`: Add local handoff files to `.gitignore` if missing.
 - `--allow-readonly`: Claude Code only. Merge safe read-only query permissions into `.claude/settings.json`.
@@ -71,6 +79,22 @@ Useful flags:
 - `--dry-run`: Show planned changes without writing files.
 
 After running the script, inspect the generated files and replace placeholder or `UNKNOWN` content with repository-based facts where possible.
+
+## Multi-Document Recovery Contract
+
+In `multi` layout, a new agent must recover in this order:
+
+1. `AGENT_HANDOFF.md`
+2. `.agent-handoff/snapshot.md`
+3. `.agent-handoff/risks.md`
+4. `.agent-handoff/backlog.md`
+5. `.agent-handoff/validation.md` when validation state matters
+6. `.agent-handoff/decisions.md` when changing durable behavior or architecture
+7. `.agent-handoff/workspace.md` when orientation or commands are needed
+8. `.agent-handoff/work-log.md` when recent implementation details are needed
+9. `.agent-handoff/archive.md` only for old context
+
+`snapshot.md` must stay short and action-oriented. Use the dedicated files for decisions, validation, backlog, risks, and history.
 
 ## References
 

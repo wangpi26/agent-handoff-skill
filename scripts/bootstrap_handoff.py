@@ -2,10 +2,12 @@
 """Bootstrap repository-local Agent handoff files.
 
 This script is intentionally conservative:
-- It creates AGENT_HANDOFF.md only when missing.
+- It creates handoff files only when missing.
+- It supports two layouts:
+  - single: legacy single-file AGENT_HANDOFF.md
+  - multi: AGENT_HANDOFF.md as an index plus .agent-handoff/*.md state files
 - It creates or updates a marked handoff protocol block in AGENTS.md for Codex.
 - It creates or updates a marked handoff protocol block in .claude/CLAUDE.md for Claude Code.
-- It creates optional support files only when requested.
 - It does not overwrite existing handoff state.
 """
 
@@ -38,7 +40,7 @@ READONLY_ALLOW = [
 ]
 
 
-def handoff_template(repo: Path) -> str:
+def single_handoff_template(repo: Path) -> str:
     today = date.today().isoformat()
     root = str(repo)
     return f"""# Agent Handoff
@@ -58,7 +60,7 @@ def handoff_template(repo: Path) -> str:
 ## Handoff Snapshot
 
 - Last updated: {today}
-- Last agent: Codex
+- Last agent: Codex/Claude Code
 - Workspace root: `{root}`
 - Current objective: Establish durable Agent handoff mechanism for this repository.
 - Current status: initialized
@@ -150,15 +152,324 @@ Also update `Current Work Log`, `Decision Log`, `Validation History`, and `Task 
 """
 
 
-COMMON_RULE_BODY = """## Required Startup Routine
+def multi_index_template(repo: Path) -> str:
+    today = date.today().isoformat()
+    root = str(repo)
+    return f"""# Agent Handoff Index
 
-Before making a plan or editing files, read:
+> Entry point for durable agent handoff memory in this repository.
+> Read this file first, then follow the Recovery Reading Order below.
+
+## Maintenance Contract
+
+- Keep this file short. It is an index and recovery route, not a work log.
+- Store current task state in `.agent-handoff/snapshot.md`.
+- Store durable facts, decisions, validation, backlog, risks, and archives in the dedicated files listed below.
+- Keep all content factual and repository-based. Mark uncertainty as `UNKNOWN`.
+- Do not include secrets, credentials, long logs, full code blocks, or chat transcript dumps.
+- Before final response for any non-trivial task, update the relevant `.agent-handoff/` files.
+
+## Handoff Layout
+
+- `.agent-handoff/snapshot.md`: Current objective, status, next actions, active files, blockers, and open questions.
+- `.agent-handoff/workspace.md`: Repository map, entry points, test commands, docs, and stable project context.
+- `.agent-handoff/decisions.md`: Important decisions with reasons and evidence.
+- `.agent-handoff/work-log.md`: Recent operational work log.
+- `.agent-handoff/validation.md`: Validation commands/checks, results, and caveats.
+- `.agent-handoff/backlog.md`: Pending work and follow-ups.
+- `.agent-handoff/risks.md`: Risks, blockers, unknowns, and user/source confirmations needed.
+- `.agent-handoff/archive.md`: Compressed old history that is not part of normal startup.
+
+## Recovery Reading Order
+
+1. Read this file.
+2. Read `.agent-handoff/snapshot.md`.
+3. Read `.agent-handoff/risks.md`.
+4. Read `.agent-handoff/backlog.md`.
+5. Read `.agent-handoff/validation.md` only if validation state matters for the current task.
+6. Read `.agent-handoff/decisions.md` only when changing architecture, behavior, dependencies, or prior decisions.
+7. Read `.agent-handoff/workspace.md` only when orientation, commands, entry points, or subproject boundaries are needed.
+8. Read `.agent-handoff/work-log.md` only when recent implementation details are needed.
+9. Read `.agent-handoff/archive.md` only when explicitly needed for old context.
+
+## Current Pointer
+
+- Last updated: {today}
+- Workspace root: `{root}`
+- Current state file: `.agent-handoff/snapshot.md`
+- Primary next-action source: `.agent-handoff/snapshot.md`
+- Risk source: `.agent-handoff/risks.md`
+- Backlog source: `.agent-handoff/backlog.md`
+
+## Project Rule Targets
+
+- Codex project rules: `AGENTS.md`
+- Claude Code project rules: `.claude/CLAUDE.md`
+
+## Closeout Rule
+
+For non-trivial work, update the relevant files before final response:
+
+- Always update `.agent-handoff/snapshot.md`.
+- Update `.agent-handoff/work-log.md` when files or task status changed.
+- Update `.agent-handoff/validation.md` when checks were run or intentionally skipped.
+- Update `.agent-handoff/decisions.md` when a durable decision was made.
+- Update `.agent-handoff/backlog.md` and `.agent-handoff/risks.md` when follow-ups, blockers, risks, or unknowns changed.
+"""
+
+
+def multi_snapshot_template(repo: Path) -> str:
+    today = date.today().isoformat()
+    return f"""# Handoff Snapshot
+
+## Current State
+
+- Last updated: {today}
+- Last agent: Codex/Claude Code
+- Workspace root: `{repo}`
+- Current objective: Establish durable multi-document Agent handoff mechanism for this repository.
+- Current status: initialized
+- Immediate next actions:
+  - Inspect repository-specific files and replace `UNKNOWN` entries with verified facts.
+- Active files:
+  - `AGENT_HANDOFF.md`
+  - `.agent-handoff/snapshot.md`
+  - `AGENTS.md`
+  - `.claude/CLAUDE.md`
+- Blockers: none
+- Open questions:
+  - Confirm whether handoff files should be committed or remain local-only.
+
+## Recovery Summary
+
+- Use `AGENT_HANDOFF.md` as the index.
+- Start here for the current objective and next action.
+- Do not treat this file as a replacement for source inspection.
+"""
+
+
+def multi_workspace_template() -> str:
+    return """# Workspace Map
+
+## Repository Structure
+
+- `.`: repository root.
+- `AGENT_HANDOFF.md`: handoff index and recovery route.
+- `.agent-handoff/`: durable handoff state files.
+
+## Main Entry Points
+
+- `UNKNOWN`
+
+## Test Entry Points
+
+- `UNKNOWN`
+
+## Docs And Specs
+
+- `UNKNOWN`
+
+## Durable Project Context
+
+- UNKNOWN: Populate with long-lived facts verified from repository files or user input.
+
+## Project Conventions
+
+- UNKNOWN
+"""
+
+
+def multi_decisions_template() -> str:
+    today = date.today().isoformat()
+    return f"""# Decision Log
+
+| Date | Decision | Reason | Evidence |
+| --- | --- | --- | --- |
+| {today} | Use multi-document Agent handoff memory. | Keep current state fast to read while preserving decisions, validation, backlog, and risks in dedicated files. | Bootstrap action. |
+
+## Decision Guidelines
+
+- Record durable decisions only.
+- Include reason and evidence.
+- Do not record guesses as decisions.
+- If evidence is missing, mark it as `UNKNOWN`.
+"""
+
+
+def multi_work_log_template() -> str:
+    today = date.today().isoformat()
+    return f"""# Current Work Log
+
+## {today}
+
+- Objective: Establish durable multi-document Agent handoff mechanism.
+- Changed files:
+  - `AGENT_HANDOFF.md`: Created handoff index.
+  - `.agent-handoff/`: Created structured handoff state files.
+  - `AGENTS.md`: Created or updated Codex project-level handoff rules if enabled.
+  - `.claude/CLAUDE.md`: Created or updated Claude Code project-level handoff rules if enabled.
+- Result: Initial multi-document handoff mechanism scaffolded.
+- Remaining risks: Repository-specific context still contains `UNKNOWN` until source files are inspected.
+
+## Work Log Guidelines
+
+- Keep only recent, still-operationally-useful work here.
+- Move stale or long history to `archive.md` as a compressed summary.
+- Prefer file paths and concrete outcomes over prose summaries.
+"""
+
+
+def multi_validation_template() -> str:
+    today = date.today().isoformat()
+    return f"""# Validation History
+
+| Date | Command/Check | Result | Notes |
+| --- | --- | --- | --- |
+| {today} | Bootstrap file creation | passed | Generated initial multi-document handoff scaffold; repository-specific facts still need review. |
+
+## Validation Guidelines
+
+- Record commands/checks that were run.
+- Record failed checks with concise cause and next action.
+- Record checks that were intentionally not run as `not run`, with the reason.
+- Do not paste long logs; summarize and reference files when needed.
+"""
+
+
+def multi_backlog_template() -> str:
+    return """# Task Backlog
+
+- [ ] Replace `UNKNOWN` entries with verified repository facts.
+- [ ] Confirm whether handoff files should be committed or gitignored.
+
+## Backlog Guidelines
+
+- Keep tasks actionable.
+- Remove completed or obsolete items.
+- Link items to risks, decisions, or files when useful.
+"""
+
+
+def multi_risks_template() -> str:
+    return """# Risks, Blockers, And Unknowns
+
+## Current Blockers
+
+- none
+
+## Current Risks
+
+- Repository-specific facts are still `UNKNOWN` until source files are inspected.
+
+## Unknowns / Confirmations Needed
+
+- UNKNOWN: Whether handoff files should be committed or remain local-only.
+
+## Risk Guidelines
+
+- Keep risks concrete.
+- Mark uncertainty as `UNKNOWN`.
+- Include the source needed to resolve each unknown when possible.
+"""
+
+
+def multi_archive_template() -> str:
+    return """# Handoff Archive
+
+This file stores compressed old history that should not be part of normal startup.
+
+## Archive Guidelines
+
+- Do not use this file for current state.
+- Move stale but potentially useful history here as concise summaries.
+- Keep pointers to relevant decisions, validation entries, or source files.
+"""
+
+
+def common_rule_body(layout: str) -> str:
+    if layout == "multi":
+        startup = """Before making a plan or editing files, read:
+
+1. `AGENT_HANDOFF.md`
+2. `.agent-handoff/snapshot.md`
+3. `.agent-handoff/risks.md`
+4. `.agent-handoff/backlog.md`
+5. Additional `.agent-handoff/` files only when needed by the current task, following the Recovery Reading Order in `AGENT_HANDOFF.md`
+6. The source files directly relevant to the user's current request
+
+Use the handoff files as continuity memory, but verify implementation details from source files before changing behavior."""
+        memory = """The repository uses multi-document durable handoff memory:
+
+- `AGENT_HANDOFF.md`: index and recovery route
+- `.agent-handoff/snapshot.md`: current objective, status, next actions, active files, blockers, and open questions
+- `.agent-handoff/workspace.md`: repository map, entry points, commands, and stable context
+- `.agent-handoff/decisions.md`: durable decisions with reasons and evidence
+- `.agent-handoff/work-log.md`: recent operational work
+- `.agent-handoff/validation.md`: validation commands/checks and results
+- `.agent-handoff/backlog.md`: pending work
+- `.agent-handoff/risks.md`: risks, blockers, unknowns, and confirmations
+- `.agent-handoff/archive.md`: compressed old history
+
+Maintain the smallest relevant file. Do not put all state into `AGENT_HANDOFF.md`; it is an index."""
+        size = """- Keep `AGENT_HANDOFF.md` short; it is an index.
+- Keep `.agent-handoff/snapshot.md` short, current, and action-oriented.
+- Keep only recent, still-relevant work in `.agent-handoff/work-log.md`.
+- Prefer updating existing bullets over appending duplicate or contradictory notes.
+- Move stale long history to `.agent-handoff/archive.md`.
+- In an ongoing uninterrupted chat, reread only relevant handoff files after compaction, resume, uncertainty, or task changes."""
+        closeout = """Before any final response for a non-trivial task, update the relevant handoff files without waiting for the user to ask.
+
+Minimum required updates:
+
+- Refresh `.agent-handoff/snapshot.md` with current objective, status, next actions, active files, blockers, and open questions.
+- Add or update `.agent-handoff/work-log.md` when files or task status changed.
+- Add `.agent-handoff/validation.md` entries for commands/checks run or intentionally not run.
+- Record durable decisions in `.agent-handoff/decisions.md`.
+- Update `.agent-handoff/backlog.md` and `.agent-handoff/risks.md` when follow-ups, blockers, risks, or unknowns changed.
+- Remove or rewrite stale state that would mislead the next agent.
+
+If the task was purely conversational and no project state changed, no file update is required."""
+        checklist = "Before final response, update the relevant `.agent-handoff/` files with final task status, files changed, commands/checks run and outcomes, and remaining risks, blockers, open questions, or next steps."
+    else:
+        startup = """Before making a plan or editing files, read:
 
 1. `AGENT_HANDOFF.md`
 2. Any task-specific docs referenced by `AGENT_HANDOFF.md`
 3. The source files directly relevant to the user's current request
 
-Use `AGENT_HANDOFF.md` as continuity memory, but verify implementation details from source files before changing behavior.
+Use `AGENT_HANDOFF.md` as continuity memory, but verify implementation details from source files before changing behavior."""
+        memory = """`AGENT_HANDOFF.md` is the durable cross-session memory for this repository. Maintain it during every meaningful task.
+
+Update it whenever any of these change:
+
+- Current objective or status
+- Active files
+- Important decisions
+- Files changed
+- Validation commands and results
+- Blockers, risks, open questions, or follow-up work
+
+Keep updates concise and evidence-based. Do not paste secrets, credentials, long logs, large code blocks, or chat transcript dumps. Replace stale information instead of adding contradictory notes."""
+        size = """- Keep `Handoff Snapshot` short, current, and action-oriented.
+- Keep only recent, still-relevant work in `Current Work Log`.
+- Prefer updating existing bullets over appending duplicate or contradictory notes.
+- In an ongoing uninterrupted chat, reread only relevant sections after compaction, resume, uncertainty, or task changes."""
+        closeout = """Before any final response for a non-trivial task, update `AGENT_HANDOFF.md` without waiting for the user to ask.
+
+Minimum required updates:
+
+- Refresh `Handoff Snapshot` with current objective, status, next actions, active files, and blockers.
+- Add or update `Current Work Log` for the task.
+- Add `Validation History` entries for commands or manual checks that were run.
+- Record remaining risks, open questions, or follow-up work.
+- Remove or rewrite stale state that would mislead the next agent.
+
+If the task was purely conversational and no project state changed, no file update is required."""
+        checklist = "Before final response, update `AGENT_HANDOFF.md` with final task status, files changed, commands/checks run and outcomes, and remaining risks, blockers, open questions, or next steps."
+
+    return f"""## Required Startup Routine
+
+{startup}
 
 ## Default Implementation Standard
 
@@ -177,72 +488,77 @@ To avoid stale snippets, line-number drift, or large unnecessary reads:
 
 ## Durable Handoff Memory
 
-`AGENT_HANDOFF.md` is the durable cross-session memory for this repository. Maintain it during every meaningful task.
-
-Update it whenever any of these change:
-
-- Current objective or status
-- Active files
-- Important decisions
-- Files changed
-- Validation commands and results
-- Blockers, risks, open questions, or follow-up work
-
-Keep updates concise and evidence-based. Do not paste secrets, credentials, long logs, large code blocks, or chat transcript dumps. Replace stale information instead of adding contradictory notes.
+{memory}
 
 ## Handoff Size Discipline
 
-- Keep `Handoff Snapshot` short, current, and action-oriented.
-- Keep only recent, still-relevant work in `Current Work Log`.
-- Prefer updating existing bullets over appending duplicate or contradictory notes.
-- In an ongoing uninterrupted chat, reread only relevant sections after compaction, resume, uncertainty, or task changes.
+{size}
 
 ## Mandatory Closeout Protocol
 
-Before any final response for a non-trivial task, update `AGENT_HANDOFF.md` without waiting for the user to ask.
-
-Minimum required updates:
-
-- Refresh `Handoff Snapshot` with current objective, status, next actions, active files, and blockers.
-- Add or update `Current Work Log` for the task.
-- Add `Validation History` entries for commands or manual checks that were run.
-- Record remaining risks, open questions, or follow-up work.
-- Remove or rewrite stale state that would mislead the next agent.
-
-If the task was purely conversational and no project state changed, no file update is required.
+{closeout}
 
 ## Work Discipline
 
-- Do not assume which subproject is active. Infer it from the user request, `AGENT_HANDOFF.md`, and repository evidence.
+- Do not assume which subproject is active. Infer it from the user request, handoff files, and repository evidence.
 - Prefer existing project conventions over new abstractions.
 - Read files before editing them.
 - Keep edits scoped to the task.
 - Do not modify generated dependency folders unless explicitly asked.
 - Never revert unrelated user or agent changes.
-- Record validation honestly. If tests or checks were not run, say so in `AGENT_HANDOFF.md` and in the final response.
+- Record validation honestly. If tests or checks were not run, say so in handoff files and in the final response.
 
 ## Session Closeout Checklist
 
-Before final response, update `AGENT_HANDOFF.md` with final task status, files changed, commands/checks run and outcomes, and remaining risks, blockers, open questions, or next steps."""
+{checklist}"""
 
 
-CODEX_BLOCK = f"""{START}
-# Codex Agent Handoff Protocol
+def rule_block(platform: str, layout: str) -> str:
+    title = "Codex Agent Handoff Protocol" if platform == "codex" else "Claude Code Agent Handoff Protocol"
+    layout_label = "multi-document" if layout == "multi" else "single-document"
+    return f"""{START}
+# {title}
 
-{COMMON_RULE_BODY}
+Layout: {layout_label}
+
+{common_rule_body(layout)}
 {END}
 """
 
 
-CLAUDE_BLOCK = f"""{START}
-# Claude Code Agent Handoff Protocol
+def session_prompts(layout: str) -> str:
+    if layout == "multi":
+        return """# Agent Session Prompts
 
-{COMMON_RULE_BODY}
-{END}
+## New Window Startup
+
+```text
+Confirm project rules are loaded, then read AGENT_HANDOFF.md and follow its Recovery Reading Order. At minimum read .agent-handoff/snapshot.md, .agent-handoff/risks.md, and .agent-handoff/backlog.md before planning.
+
+Recover the current objective, status, immediate next action, active files, blockers, validation caveats, and source files that need inspection. Read only task-relevant files after that. During the task, update the smallest relevant .agent-handoff file whenever objective, decisions, changed files, validation, risks, blockers, or next steps change. Complete handoff closeout before the final response.
+```
+
+## Continue Specific Task
+
+```text
+Continue this task: <specific task>.
+
+Start by reading AGENT_HANDOFF.md, then .agent-handoff/snapshot.md, .agent-handoff/risks.md, and .agent-handoff/backlog.md. Inspect task-relevant source files. Maintain the multi-document handoff: update snapshot at the start, decisions when durable choices are made, work-log when files change, validation when checks run or are skipped, and risks/backlog when follow-ups or unknowns change.
+```
+
+## Closeout
+
+```text
+Before ending this turn, update the multi-document handoff: refresh .agent-handoff/snapshot.md, update .agent-handoff/work-log.md, record .agent-handoff/validation.md, update .agent-handoff/backlog.md and .agent-handoff/risks.md, and remove or rewrite stale state. Then report what changed, what was validated, and what remains.
+```
+
+## Handoff Quality Review
+
+```text
+Review and directly repair the multi-document handoff so a new agent can take over. Check that AGENT_HANDOFF.md is only an index, snapshot is current and short, next actions are concrete, paths are locatable, decisions have reasons and evidence, validation is recorded, and stale, contradictory, speculative, or chat-transcript content is removed.
+```
 """
-
-
-SESSION_PROMPTS = """# Agent Session Prompts
+    return """# Agent Session Prompts
 
 ## New Window Startup
 
@@ -286,6 +602,13 @@ def write_text(path: Path, content: str, dry_run: bool, changed: list[str]) -> N
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_text(content, encoding="utf-8", newline="\n")
     changed.append(str(path))
+
+
+def create_if_missing(path: Path, content: str, dry_run: bool, changed: list[str], notes: list[str]) -> None:
+    if path.exists():
+        notes.append(f"Preserved existing {path}; inspect and repair manually if needed.")
+        return
+    write_text(path, content, dry_run, changed)
 
 
 def replace_marked_block(original: str, block: str) -> str:
@@ -337,6 +660,23 @@ def merge_readonly_permissions(repo: Path, dry_run: bool, changed: list[str]) ->
     write_text(path, content, dry_run, changed)
 
 
+def create_single_layout(repo: Path, dry_run: bool, changed: list[str], notes: list[str]) -> None:
+    create_if_missing(repo / "AGENT_HANDOFF.md", single_handoff_template(repo), dry_run, changed, notes)
+
+
+def create_multi_layout(repo: Path, dry_run: bool, changed: list[str], notes: list[str]) -> None:
+    handoff_dir = repo / ".agent-handoff"
+    create_if_missing(repo / "AGENT_HANDOFF.md", multi_index_template(repo), dry_run, changed, notes)
+    create_if_missing(handoff_dir / "snapshot.md", multi_snapshot_template(repo), dry_run, changed, notes)
+    create_if_missing(handoff_dir / "workspace.md", multi_workspace_template(), dry_run, changed, notes)
+    create_if_missing(handoff_dir / "decisions.md", multi_decisions_template(), dry_run, changed, notes)
+    create_if_missing(handoff_dir / "work-log.md", multi_work_log_template(), dry_run, changed, notes)
+    create_if_missing(handoff_dir / "validation.md", multi_validation_template(), dry_run, changed, notes)
+    create_if_missing(handoff_dir / "backlog.md", multi_backlog_template(), dry_run, changed, notes)
+    create_if_missing(handoff_dir / "risks.md", multi_risks_template(), dry_run, changed, notes)
+    create_if_missing(handoff_dir / "archive.md", multi_archive_template(), dry_run, changed, notes)
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description="Bootstrap Agent handoff files for a repository.")
     parser.add_argument("--repo", default=".", help="Repository root. Defaults to current directory.")
@@ -345,6 +685,12 @@ def main() -> int:
         choices=["codex", "claude", "both"],
         default="both",
         help="Project rule target: codex updates AGENTS.md, claude updates .claude/CLAUDE.md, both updates both.",
+    )
+    parser.add_argument(
+        "--layout",
+        choices=["single", "multi"],
+        default="multi",
+        help="Handoff layout: single creates legacy AGENT_HANDOFF.md, multi creates AGENT_HANDOFF.md plus .agent-handoff/*.md.",
     )
     parser.add_argument("--session-prompts", action="store_true", help="Create AGENT_SESSION_PROMPTS.md if missing.")
     parser.add_argument("--gitignore", action="store_true", help="Add local handoff files to .gitignore if missing.")
@@ -361,40 +707,41 @@ def main() -> int:
     changed: list[str] = []
     notes: list[str] = []
 
-    handoff = repo / "AGENT_HANDOFF.md"
-    if handoff.exists():
-        notes.append(f"Preserved existing {handoff}; inspect and repair manually if needed.")
+    if args.layout == "multi":
+        create_multi_layout(repo, args.dry_run, changed, notes)
     else:
-        write_text(handoff, handoff_template(repo), args.dry_run, changed)
+        create_single_layout(repo, args.dry_run, changed, notes)
 
     write_codex = args.platform in ("codex", "both") and not args.skip_codex_rules
     write_claude = args.platform in ("claude", "both") and not args.skip_claude_rules
 
     if write_codex:
         codex_path = repo / "AGENTS.md"
-        updated = replace_marked_block(read_text(codex_path), CODEX_BLOCK)
+        updated = replace_marked_block(read_text(codex_path), rule_block("codex", args.layout))
         write_text(codex_path, updated, args.dry_run, changed)
 
     if write_claude:
         claude_path = repo / ".claude" / "CLAUDE.md"
-        updated = replace_marked_block(read_text(claude_path), CLAUDE_BLOCK)
+        updated = replace_marked_block(read_text(claude_path), rule_block("claude", args.layout))
         write_text(claude_path, updated, args.dry_run, changed)
 
     if args.session_prompts:
         prompts = repo / "AGENT_SESSION_PROMPTS.md"
-        if prompts.exists():
-            notes.append(f"Preserved existing {prompts}.")
-        else:
-            write_text(prompts, SESSION_PROMPTS, args.dry_run, changed)
+        create_if_missing(prompts, session_prompts(args.layout), args.dry_run, changed, notes)
 
     if args.gitignore:
-        add_gitignore_entries(repo, ["AGENT_HANDOFF.md", "AGENT_SESSION_PROMPTS.md"], args.dry_run, changed)
+        entries = ["AGENT_HANDOFF.md", "AGENT_SESSION_PROMPTS.md"]
+        if args.layout == "multi":
+            entries.append(".agent-handoff/")
+        add_gitignore_entries(repo, entries, args.dry_run, changed)
 
     if args.allow_readonly:
         merge_readonly_permissions(repo, args.dry_run, changed)
 
     mode = "DRY RUN" if args.dry_run else "UPDATED"
     print(f"{mode}: {repo}")
+    print(f"Layout: {args.layout}")
+    print(f"Platform rules: {args.platform}")
     if changed:
         print("Changed files:")
         for item in changed:
