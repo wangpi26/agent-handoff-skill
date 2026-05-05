@@ -1,0 +1,4 @@
+interface:
+  display_name: "Agent Handoff"
+  short_description: "Create and maintain durable repository handoff docs."
+  default_prompt: "Create or repair a durable Agent handoff mechanism for this repository."
