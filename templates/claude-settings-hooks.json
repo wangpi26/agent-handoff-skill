@@ -1,0 +1,40 @@
+{
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"$CLAUDE_PROJECT_DIR/.claude/hooks/handoff-watch.mjs\"",
+            "timeout": 20,
+            "statusMessage": "Checking AGENT_HANDOFF on session start"
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"$CLAUDE_PROJECT_DIR/.claude/hooks/handoff-watch.mjs\"",
+            "timeout": 10,
+            "statusMessage": "Checking AGENT_HANDOFF closeout"
+          }
+        ]
+      }
+    ],
+    "SubagentStop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"$CLAUDE_PROJECT_DIR/.claude/hooks/handoff-watch.mjs\"",
+            "timeout": 10,
+            "statusMessage": "Checking subagent handoff closeout"
+          }
+        ]
+      }
+    ]
+  }
+}

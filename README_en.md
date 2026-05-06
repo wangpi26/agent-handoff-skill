@@ -2,6 +2,8 @@
 
 [中文](README.md) | [English](README_en.md)
 
+If this skill helps your agent handoff workflow, please consider giving the repository a Star so more people can find it.
+
 ![Agent Handoff Skill hero](assets/readme/hero.svg)
 
 A **durable handoff mechanism skill** for Codex, Claude Code, and other AI coding agents.
@@ -53,7 +55,8 @@ The default mechanism is now a **multi-document layout**, while the legacy singl
 | `AGENTS.md` | Codex project instructions file. Stores the handoff maintenance rules that Codex reads for the repository. |
 | `.claude/CLAUDE.md` | Recommended project-level Claude Code rules. Requires future agents to read and maintain the handoff document. |
 | `AGENT_SESSION_PROMPTS.md` | Optional reusable prompts for new-window startup, task continuation, closeout, and handoff quality review. |
-| `.claude/settings.json` | Optional. Merges safe read-only query permissions only when the user asks for them. |
+| `.claude/settings.json` | Optional. Merges safe read-only query permissions or Claude Code soft reminder hook entries only when the user asks for them. |
+| `.claude/hooks/handoff-watch.mjs` | Optional Claude Code hook script, created only when `--install-hooks` is explicitly used. |
 | `.gitignore` | Optional. Keeps local handoff files uncommitted unless the project decides to version them. |
 
 The core rule is **idempotency**. Project-level handoff rules are wrapped in stable markers:
@@ -250,6 +253,7 @@ Common flags:
 | `--session-prompts` | Create `AGENT_SESSION_PROMPTS.md` if missing. |
 | `--gitignore` | Add `AGENT_HANDOFF.md` and `AGENT_SESSION_PROMPTS.md` to `.gitignore`. |
 | `--allow-readonly` | Claude Code only: merge safe read-only query permissions into `.claude/settings.json`. |
+| `--install-hooks` | Claude Code only: install optional soft reminder hooks and merge missing hook entries into `.claude/settings.json`. |
 | `--dry-run` | Show planned changes without writing files. |
 | `--skip-codex-rules` | Do not create or update `AGENTS.md`. |
 | `--skip-claude-rules` | Do not create or update `.claude/CLAUDE.md`. |
@@ -316,6 +320,28 @@ python scripts\bootstrap_handoff.py --repo . --allow-readonly
 
 This only merges safe local read/search/inspection permissions into Claude Code's `.claude/settings.json`, such as `Read`, `Grep`, `Glob`, `rg`, `git status`, and `git diff`. It does not allow writing, deleting, installing dependencies, network access, starting services, or database changes.
 
+### Install Claude Code Soft Reminder Hooks
+
+User:
+
+```text
+Use the agent-handoff skill and add Claude Code handoff closeout reminder hooks.
+```
+
+The agent can dry-run first:
+
+```powershell
+python scripts\bootstrap_handoff.py --repo . --install-hooks --dry-run
+```
+
+Then apply:
+
+```powershell
+python scripts\bootstrap_handoff.py --repo . --install-hooks
+```
+
+This creates `.claude/hooks/handoff-watch.mjs` and merges missing `SessionStart`, `Stop`, and `SubagentStop` hook entries into `.claude/settings.json`. The hook is advisory only: it always emits `decision: "approve"`, always exits `0`, and will not terminate the session if `AGENT_HANDOFF.md` is missing or the check fails unexpectedly.
+
 ## Repository Structure
 
 ```text
@@ -330,6 +356,9 @@ agent-handoff/
       hero.svg
       workflow.svg
       scenarios.svg
+  templates/
+    claude-settings-hooks.json
+    handoff-watch.mjs
   references/
     codex-rules.md
     claude-rules.md
@@ -361,9 +390,11 @@ Responsibilities:
 - `references/templates.md`: Templates for `AGENT_HANDOFF.md` and `AGENT_SESSION_PROMPTS.md`.
 - `references/codex-rules.md`: Codex `AGENTS.md` handoff rule block.
 - `references/claude-rules.md`: Claude Code `.claude/CLAUDE.md` handoff rule block.
-- `references/hooks.md`: Optional hook enforcement examples.
+- `references/hooks.md`: Optional Claude Code hook reminder examples. Hooks must always `approve`, exit `0`, and never block or close the session.
+- `templates/claude-settings-hooks.json`: Claude Code `.claude/settings.json` hook snippet template for manual merge or script installation.
+- `templates/handoff-watch.mjs`: Claude Code handoff reminder hook script template.
 - `references/quality.md`: Quality standards for reviewing, repairing, and compressing handoff documents.
-- `scripts/bootstrap_handoff.py`: Conservative setup script. Creates missing files, single or multi handoff layouts, and idempotently merges rules.
+- `scripts/bootstrap_handoff.py`: Conservative setup script. Creates missing files, single or multi handoff layouts, idempotently merges rules, and can optionally install Claude Code soft reminder hooks.
 - `README.md` / `README_en.md`: GitHub documentation. Not required at runtime.
 
 ## Design Principles
@@ -435,5 +466,10 @@ Multi-document layout must also satisfy:
 
 - If the project commits `AGENT_HANDOFF.md`, be careful not to include private context, sensitive paths, logs, or internal information.
 - If the project gitignores the handoff document, make sure the team understands that it is local state.
-- Hooks are optional reinforcement. They should not replace the agent's responsibility to close out properly.
+- Hooks are optional reinforcement. They should not replace the agent's responsibility to close out properly; the default setup does not install hooks, and only explicit `--install-hooks` writes `.claude/hooks/handoff-watch.mjs` and merges `.claude/settings.json`.
+- If the target project already has an unmarked `.claude/hooks/handoff-watch.mjs`, the script preserves it and does not wire settings to that unverified script, avoiding accidental use of custom hooks that might block a session.
 - `bootstrap_handoff.py` does not overwrite an existing `AGENT_HANDOFF.md`; existing state must be repaired from repository facts.
+
+## License
+
+Use this under your repository's license. If the repository does not have a license yet, consider adding an explicit open-source license such as MIT.

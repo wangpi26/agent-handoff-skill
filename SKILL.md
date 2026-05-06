@@ -1,6 +1,6 @@
 ---
 name: agent-handoff
-description: Cross-platform Codex and Claude Code skill for creating, updating, repairing, or reviewing durable repository handoff mechanisms. Supports single-document and multi-document layouts. Use when the user asks to bootstrap cross-session project memory, create or maintain AGENT_HANDOFF.md and .agent-handoff state files, add Codex AGENTS.md rules, add Claude Code .claude/CLAUDE.md rules, create reusable session prompts, enforce closeout, repair stale handoff state, or review handoff quality. Install under ~/.codex/skills/agent-handoff for Codex, ~/.claude/skills/agent-handoff for Claude Code personal use, or repo/.claude/skills/agent-handoff for Claude Code project use.
+description: Cross-platform Codex and Claude Code skill for creating, updating, repairing, or reviewing durable repository handoff mechanisms. Supports single-document and multi-document layouts. Use when the user asks to bootstrap cross-session project memory, create or maintain AGENT_HANDOFF.md and .agent-handoff state files, add Codex AGENTS.md rules, add Claude Code .claude/CLAUDE.md rules, create reusable session prompts, install optional Claude Code advisory hooks, enforce closeout, repair stale handoff state, or review handoff quality. Install under ~/.codex/skills/agent-handoff for Codex, ~/.claude/skills/agent-handoff for Claude Code personal use, or repo/.claude/skills/agent-handoff for Claude Code project use.
 ---
 
 # Agent Handoff
@@ -42,7 +42,8 @@ The same `SKILL.md`, `references/`, and `scripts/` are shared across platforms. 
 - `.claude/CLAUDE.md`: Recommended project-level Claude Code rules generated for repositories that use Claude Code. Merge a marked handoff protocol block; do not overwrite unrelated rules.
 - `AGENT_SESSION_PROMPTS.md`: Optional reusable prompts for new window startup, continuation, closeout, and quality review.
 - `.gitignore`: Optionally add local handoff files when the project does not want to commit them.
-- `.claude/settings.json`: Claude Code only. Optionally merge safe read-only permission allow rules if the user asks for read/query operations to avoid repeated approval.
+- `.claude/settings.json`: Claude Code only. Optionally merge safe read-only permission allow rules or advisory handoff hooks if the user explicitly asks.
+- `.claude/hooks/handoff-watch.mjs`: Claude Code only. Optional advisory hook script installed only when the user asks for hook reminders.
 
 ## Idempotency Rules
 
@@ -74,6 +75,7 @@ Useful flags:
 - `--session-prompts`: Create `AGENT_SESSION_PROMPTS.md` if missing.
 - `--gitignore`: Add local handoff files to `.gitignore` if missing.
 - `--allow-readonly`: Claude Code only. Merge safe read-only query permissions into `.claude/settings.json`.
+- `--install-hooks`: Claude Code only. Install advisory handoff hook script and merge missing hook entries into `.claude/settings.json`. Hooks always approve and exit `0`.
 - `--skip-codex-rules`: Do not create or update `AGENTS.md`.
 - `--skip-claude-rules`: Do not create or update `.claude/CLAUDE.md`.
 - `--dry-run`: Show planned changes without writing files.
@@ -105,6 +107,8 @@ Load only the references needed for the task:
 - `references/claude-rules.md`: Read when creating or updating Claude Code `.claude/CLAUDE.md`.
 - `references/hooks.md`: Read only when the user asks for hook-based enforcement.
 - `references/quality.md`: Read when reviewing, compressing, repairing, or validating a handoff mechanism.
+- `templates/claude-settings-hooks.json`: Claude Code hook settings snippet for manual review or installation.
+- `templates/handoff-watch.mjs`: Claude Code advisory hook script template.
 
 ## Closeout
 

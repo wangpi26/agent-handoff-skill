@@ -39,6 +39,10 @@ READONLY_ALLOW = [
     "Bash(git ls-files:*)",
 ]
 
+HOOK_SCRIPT_START = "// AGENT_HANDOFF_HOOK:START"
+HOOK_SCRIPT_END = "// AGENT_HANDOFF_HOOK:END"
+HOOK_COMMAND = 'node "$CLAUDE_PROJECT_DIR/.claude/hooks/handoff-watch.mjs"'
+
 
 def single_handoff_template(repo: Path) -> str:
     today = date.today().isoformat()
@@ -590,6 +594,115 @@ Review and directly repair AGENT_HANDOFF.md so a new agent can take over. Check 
 """
 
 
+def hook_script_template() -> str:
+    return f"""{HOOK_SCRIPT_START}
+import fs from "node:fs";
+import path from "node:path";
+
+const projectDir = process.env.CLAUDE_PROJECT_DIR || process.cwd();
+const handoffPath = path.join(projectDir, "AGENT_HANDOFF.md");
+const handoffDir = path.join(projectDir, ".agent-handoff");
+
+function approve(reason) {{
+  process.stdout.write(JSON.stringify({{
+    decision: "approve",
+    reason
+  }}));
+  process.exit(0);
+}}
+
+try {{
+  if (!fs.existsSync(handoffPath)) {{
+    approve("AGENT_HANDOFF.md is missing. If this is a meaningful project task, create it before closeout.");
+  }}
+
+  const stat = fs.statSync(handoffPath);
+  const ageMinutes = Math.round((Date.now() - stat.mtimeMs) / 60000);
+  const content = fs.readFileSync(handoffPath, "utf8");
+  const missing = [];
+
+  if (fs.existsSync(handoffDir)) {{
+    for (const rel of [
+      "snapshot.md",
+      "workspace.md",
+      "decisions.md",
+      "work-log.md",
+      "validation.md",
+      "backlog.md",
+      "risks.md",
+      "archive.md"
+    ]) {{
+      if (!fs.existsSync(path.join(handoffDir, rel))) missing.push(`.agent-handoff/${{rel}}`);
+    }}
+    if (!content.includes("## Recovery Reading Order")) missing.push("AGENT_HANDOFF.md Recovery Reading Order");
+  }} else {{
+    for (const heading of [
+      "## Handoff Snapshot",
+      "## Current Work Log",
+      "## Validation History",
+      "## Task Backlog"
+    ]) {{
+      if (!content.includes(heading)) missing.push(heading);
+    }}
+  }}
+
+  const reminders = [];
+  if (ageMinutes > 120) reminders.push(`AGENT_HANDOFF.md was last modified about ${{ageMinutes}} minutes ago.`);
+  if (missing.length) reminders.push(`Missing expected sections: ${{missing.join(", ")}}.`);
+
+  approve(reminders.length
+    ? reminders.join(" ") + " Update the handoff before final response if repository state changed."
+    : "Handoff files exist and have the expected core structure.");
+}} catch (error) {{
+  approve(`Handoff hook check failed softly: ${{error.message}}. Manually verify AGENT_HANDOFF.md before closeout.`);
+}}
+{HOOK_SCRIPT_END}
+"""
+
+
+def hook_settings_template() -> dict:
+    return {
+        "hooks": {
+            "SessionStart": [
+                {
+                    "hooks": [
+                        {
+                            "type": "command",
+                            "command": HOOK_COMMAND,
+                            "timeout": 20,
+                            "statusMessage": "Checking AGENT_HANDOFF on session start",
+                        }
+                    ]
+                }
+            ],
+            "Stop": [
+                {
+                    "hooks": [
+                        {
+                            "type": "command",
+                            "command": HOOK_COMMAND,
+                            "timeout": 10,
+                            "statusMessage": "Checking AGENT_HANDOFF closeout",
+                        }
+                    ]
+                }
+            ],
+            "SubagentStop": [
+                {
+                    "hooks": [
+                        {
+                            "type": "command",
+                            "command": HOOK_COMMAND,
+                            "timeout": 10,
+                            "statusMessage": "Checking subagent handoff closeout",
+                        }
+                    ]
+                }
+            ],
+        }
+    }
+
+
 def read_text(path: Path) -> str:
     return path.read_text(encoding="utf-8") if path.exists() else ""
 
@@ -601,7 +714,9 @@ def write_text(path: Path, content: str, dry_run: bool, changed: list[str]) -> N
     if not dry_run:
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_text(content, encoding="utf-8", newline="\n")
-    changed.append(str(path))
+    item = str(path)
+    if item not in changed:
+        changed.append(item)
 
 
 def create_if_missing(path: Path, content: str, dry_run: bool, changed: list[str], notes: list[str]) -> None:
@@ -623,6 +738,15 @@ def replace_marked_block(original: str, block: str) -> str:
     if not original.strip():
         return block.strip() + "\n"
     return original.rstrip() + "\n\n" + block.strip() + "\n"
+
+
+def replace_marked_script(original: str, block: str) -> str:
+    start = original.find(HOOK_SCRIPT_START)
+    end = original.find(HOOK_SCRIPT_END)
+    if start != -1 and end != -1 and end > start:
+        end += len(HOOK_SCRIPT_END)
+        return original[:start].rstrip() + "\n" + block.strip() + "\n" + original[end:].lstrip()
+    return original
 
 
 def add_gitignore_entries(repo: Path, entries: Iterable[str], dry_run: bool, changed: list[str]) -> None:
@@ -660,6 +784,75 @@ def merge_readonly_permissions(repo: Path, dry_run: bool, changed: list[str]) ->
     write_text(path, content, dry_run, changed)
 
 
+def load_settings_json(path: Path) -> dict:
+    if path.exists():
+        try:
+            data = json.loads(read_text(path))
+        except json.JSONDecodeError as exc:
+            raise SystemExit(f"Cannot update invalid JSON: {path}: {exc}") from exc
+    else:
+        data = {}
+    if not isinstance(data, dict):
+        raise SystemExit(f"Cannot update settings: root JSON value is not an object in {path}")
+    return data
+
+
+def merge_hook_settings(repo: Path, dry_run: bool, changed: list[str]) -> None:
+    path = repo / ".claude" / "settings.json"
+    data = load_settings_json(path)
+    template = hook_settings_template()
+
+    hooks = data.setdefault("hooks", {})
+    if not isinstance(hooks, dict):
+        raise SystemExit(f"Cannot merge hooks: hooks is not an object in {path}")
+
+    for event, groups in template["hooks"].items():
+        existing_groups = hooks.setdefault(event, [])
+        if not isinstance(existing_groups, list):
+            raise SystemExit(f"Cannot merge hooks: hooks.{event} is not a list in {path}")
+
+        found = False
+        for group in existing_groups:
+            if not isinstance(group, dict):
+                continue
+            commands = group.get("hooks", [])
+            if not isinstance(commands, list):
+                continue
+            for command in commands:
+                if isinstance(command, dict) and command.get("type") == "command" and command.get("command") == HOOK_COMMAND:
+                    found = True
+                    break
+            if found:
+                break
+
+        if not found:
+            existing_groups.extend(groups)
+
+    content = json.dumps(data, indent=2, ensure_ascii=False) + "\n"
+    write_text(path, content, dry_run, changed)
+
+
+def install_hooks(repo: Path, dry_run: bool, changed: list[str], notes: list[str]) -> None:
+    script_path = repo / ".claude" / "hooks" / "handoff-watch.mjs"
+    script = hook_script_template()
+    script_ready = True
+    if script_path.exists():
+        existing = read_text(script_path)
+        if existing == script:
+            pass
+        elif HOOK_SCRIPT_START in existing and HOOK_SCRIPT_END in existing:
+            write_text(script_path, replace_marked_script(existing, script), dry_run, changed)
+        else:
+            notes.append(f"Preserved existing {script_path}; it has no Agent handoff markers, so hook script was not overwritten.")
+            notes.append("Skipped hook settings merge to avoid wiring an unverified existing hook script.")
+            script_ready = False
+    else:
+        write_text(script_path, script, dry_run, changed)
+
+    if script_ready:
+        merge_hook_settings(repo, dry_run, changed)
+
+
 def create_single_layout(repo: Path, dry_run: bool, changed: list[str], notes: list[str]) -> None:
     create_if_missing(repo / "AGENT_HANDOFF.md", single_handoff_template(repo), dry_run, changed, notes)
 
@@ -695,6 +888,7 @@ def main() -> int:
     parser.add_argument("--session-prompts", action="store_true", help="Create AGENT_SESSION_PROMPTS.md if missing.")
     parser.add_argument("--gitignore", action="store_true", help="Add local handoff files to .gitignore if missing.")
     parser.add_argument("--allow-readonly", action="store_true", help="Claude Code only: merge safe read-only query permissions into .claude/settings.json.")
+    parser.add_argument("--install-hooks", action="store_true", help="Claude Code only: install advisory handoff hooks into .claude/hooks and merge .claude/settings.json.")
     parser.add_argument("--skip-codex-rules", action="store_true", help="Do not create or update AGENTS.md.")
     parser.add_argument("--skip-claude-rules", action="store_true", help="Do not create or update .claude/CLAUDE.md.")
     parser.add_argument("--dry-run", action="store_true", help="Print planned changes without writing files.")
@@ -737,6 +931,9 @@ def main() -> int:
 
     if args.allow_readonly:
         merge_readonly_permissions(repo, args.dry_run, changed)
+
+    if args.install_hooks:
+        install_hooks(repo, args.dry_run, changed, notes)
 
     mode = "DRY RUN" if args.dry_run else "UPDATED"
     print(f"{mode}: {repo}")

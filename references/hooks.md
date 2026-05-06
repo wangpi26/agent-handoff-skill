@@ -1,129 +1,64 @@
 # Optional Hook Enforcement
 
-Use hooks only when the user asks for stronger enforcement than written project rules. Hooks should check and remind; they should not auto-generate complex handoff content because that risks writing false state. The example supports both single-document and multi-document handoff layouts.
+Use hooks only when the user asks for stronger enforcement than written project rules. Hooks should check and remind; they should not auto-generate complex handoff content because that risks writing false state. The provided templates support both single-document and multi-document handoff layouts.
+
+This hook guidance is optional and Claude Code specific. Codex does not use this hook snippet, and the default bootstrap command does not install hooks unless `--install-hooks` is passed.
 
 ## Principles
 
 - Keep hooks lightweight, local, and project-scoped.
 - Prefer soft reminders over blocking the workflow.
 - Always emit valid JSON from hook scripts.
+- Always return `decision: "approve"` and exit with status code `0`, including error paths.
+- Never use hook failures to terminate, block, or close an agent session.
 - Do not use hooks to write speculative task status.
 - Put scripts under `.claude/hooks/` and reference them from `.claude/settings.json`.
+- Preserve existing user hook scripts unless they contain the Agent handoff hook markers.
 
-## Minimal `.claude/settings.json` Hook Snippet
+## Recommended Install
 
-Merge this into an existing settings file instead of overwriting unrelated settings.
+Use the bootstrap script when the user explicitly asks for hooks:
 
-```json
-{
-  "hooks": {
-    "SessionStart": [
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "node \"$CLAUDE_PROJECT_DIR/.claude/hooks/handoff-watch.mjs\"",
-            "timeout": 20,
-            "statusMessage": "Checking AGENT_HANDOFF on session start"
-          }
-        ]
-      }
-    ],
-    "Stop": [
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "node \"$CLAUDE_PROJECT_DIR/.claude/hooks/handoff-watch.mjs\"",
-            "timeout": 10,
-            "statusMessage": "Checking AGENT_HANDOFF closeout"
-          }
-        ]
-      }
-    ],
-    "SubagentStop": [
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "node \"$CLAUDE_PROJECT_DIR/.claude/hooks/handoff-watch.mjs\"",
-            "timeout": 10,
-            "statusMessage": "Checking subagent handoff closeout"
-          }
-        ]
-      }
-    ]
-  }
-}
+```bash
+python <skill-dir>/scripts/bootstrap_handoff.py --repo <repo-root> --install-hooks
 ```
 
-## Minimal `handoff-watch.mjs`
+This command:
 
-```javascript
-import fs from "node:fs";
-import path from "node:path";
+- Creates `.claude/hooks/handoff-watch.mjs` if missing.
+- Replaces only the marked Agent handoff block in `.claude/hooks/handoff-watch.mjs` if the markers already exist.
+- Preserves an existing `.claude/hooks/handoff-watch.mjs` with no Agent handoff markers.
+- Merges missing hook entries into `.claude/settings.json`.
+- Avoids duplicating hook commands on repeated runs.
 
-const projectDir = process.env.CLAUDE_PROJECT_DIR || process.cwd();
-const handoffPath = path.join(projectDir, "AGENT_HANDOFF.md");
-const handoffDir = path.join(projectDir, ".agent-handoff");
+Use `--dry-run` first when changing an existing project:
 
-function json(message) {
-  process.stdout.write(JSON.stringify(message));
-}
-
-try {
-  if (!fs.existsSync(handoffPath)) {
-    json({
-      decision: "approve",
-      reason: "AGENT_HANDOFF.md is missing. If this is a meaningful project task, create it before closeout."
-    });
-    process.exit(0);
-  }
-
-  const stat = fs.statSync(handoffPath);
-  const ageMinutes = Math.round((Date.now() - stat.mtimeMs) / 60000);
-  const content = fs.readFileSync(handoffPath, "utf8");
-  const missing = [];
-
-  if (fs.existsSync(handoffDir)) {
-    for (const rel of [
-      "snapshot.md",
-      "workspace.md",
-      "decisions.md",
-      "work-log.md",
-      "validation.md",
-      "backlog.md",
-      "risks.md",
-      "archive.md"
-    ]) {
-      if (!fs.existsSync(path.join(handoffDir, rel))) missing.push(`.agent-handoff/${rel}`);
-    }
-    if (!content.includes("## Recovery Reading Order")) missing.push("AGENT_HANDOFF.md Recovery Reading Order");
-  } else {
-    for (const heading of [
-      "## Handoff Snapshot",
-      "## Current Work Log",
-      "## Validation History",
-      "## Task Backlog"
-    ]) {
-      if (!content.includes(heading)) missing.push(heading);
-    }
-  }
-
-  const reminders = [];
-  if (ageMinutes > 120) reminders.push(`AGENT_HANDOFF.md was last modified about ${ageMinutes} minutes ago.`);
-  if (missing.length) reminders.push(`Missing expected sections: ${missing.join(", ")}.`);
-
-  json({
-    decision: "approve",
-    reason: reminders.length
-      ? reminders.join(" ") + " Update the handoff before final response if repository state changed."
-      : "Handoff files exist and have the expected core structure."
-  });
-} catch (error) {
-  json({
-    decision: "approve",
-    reason: `Handoff hook check failed softly: ${error.message}. Manually verify AGENT_HANDOFF.md before closeout.`
-  });
-}
+```bash
+python <skill-dir>/scripts/bootstrap_handoff.py --repo <repo-root> --install-hooks --dry-run
 ```
+
+## Template Files
+
+- `templates/claude-settings-hooks.json`: Minimal `.claude/settings.json` hook snippet.
+- `templates/handoff-watch.mjs`: Advisory hook script that checks handoff file freshness and expected structure.
+
+When manually installing hooks, merge the `hooks` object from `templates/claude-settings-hooks.json` into the project's `.claude/settings.json` instead of overwriting unrelated settings.
+
+## Expected Target Files
+
+```text
+.claude/
+  settings.json
+  hooks/
+    handoff-watch.mjs
+```
+
+## Safety Contract
+
+The hook is an advisory reminder, not an enforcement gate. It must approve even when:
+
+- `AGENT_HANDOFF.md` is missing.
+- `.agent-handoff/` files are incomplete.
+- The script encounters an unexpected runtime error.
+
+If stricter enforcement is desired, do not change this template to block by default. First confirm the desired behavior with the user and document the operational risk, because a blocking hook can interrupt normal agent closeout or session startup.

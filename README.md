@@ -2,6 +2,8 @@
 
 [中文](README.md) | [English](README_en.md)
 
+如果这个 skill 对你的 Agent 接力流程有帮助，欢迎给仓库点一个 Star，让更多人更容易找到它。
+
 ![Agent Handoff Skill hero](assets/readme/hero.svg)
 
 一个给 Codex / Claude Code / AI Coding Agent 使用的 **可持续接力机制 skill**。
@@ -53,7 +55,8 @@
 | `AGENTS.md` | Codex 项目级 instructions 文件，写入 Codex 会读取的接力维护规则。 |
 | `.claude/CLAUDE.md` | 项目级 Claude Code 规则，要求未来 Agent 启动时读取接力文档，并在收尾前更新。 |
 | `AGENT_SESSION_PROMPTS.md` | 可选文件，保存新窗口启动、继续任务、收尾、接力质量审查等常用提示词。 |
-| `.claude/settings.json` | 可选文件，仅在用户要求时合并安全的只读查询权限。 |
+| `.claude/settings.json` | 可选文件，仅在用户要求时合并安全的只读查询权限或 Claude Code 软提醒 hook 条目。 |
+| `.claude/hooks/handoff-watch.mjs` | 可选 Claude Code hook 脚本，仅在显式使用 `--install-hooks` 时创建。 |
 | `.gitignore` | 可选更新，把本地接力文档设为不提交，除非项目决定把它纳入版本控制。 |
 
 核心约束是 **幂等**：项目级规则使用固定 marker 包裹。
@@ -250,6 +253,7 @@ python scripts\bootstrap_handoff.py --repo E:\path\to\your\repo --platform both 
 | `--session-prompts` | 如果缺失则创建 `AGENT_SESSION_PROMPTS.md`。 |
 | `--gitignore` | 把 `AGENT_HANDOFF.md` 和 `AGENT_SESSION_PROMPTS.md` 加入 `.gitignore`。 |
 | `--allow-readonly` | Claude Code 专用：合并安全只读查询权限到 `.claude/settings.json`。 |
+| `--install-hooks` | Claude Code 专用：安装可选软提醒 hook，并把缺失 hook 条目合并到 `.claude/settings.json`。 |
 | `--dry-run` | 只显示计划改动，不写入文件。 |
 | `--skip-codex-rules` | 不创建或更新 `AGENTS.md`。 |
 | `--skip-claude-rules` | 不创建或更新 `.claude/CLAUDE.md`。 |
@@ -316,6 +320,28 @@ python scripts\bootstrap_handoff.py --repo . --allow-readonly
 
 这只会在 Claude Code 的 `.claude/settings.json` 中合并安全的本地读取/搜索/检查权限，例如 `Read`、`Grep`、`Glob`、`rg`、`git status`、`git diff`。不会放行写入、删除、安装依赖、网络请求、启动服务或数据库变更。
 
+### 安装 Claude Code 软提醒 Hook
+
+用户：
+
+```text
+使用 agent-handoff skill，并为 Claude Code 添加接力 closeout 提醒 hook。
+```
+
+Agent 可以先 dry-run：
+
+```powershell
+python scripts\bootstrap_handoff.py --repo . --install-hooks --dry-run
+```
+
+确认后再执行：
+
+```powershell
+python scripts\bootstrap_handoff.py --repo . --install-hooks
+```
+
+这会创建 `.claude/hooks/handoff-watch.mjs`，并把 `SessionStart`、`Stop`、`SubagentStop` 的缺失 hook 条目合并进 `.claude/settings.json`。该 hook 只做软提醒：始终输出 `decision: "approve"`，始终以 `0` 退出，不会因为 `AGENT_HANDOFF.md` 缺失或脚本检查异常而终止会话。
+
 ## 目录结构
 
 ```text
@@ -330,6 +356,9 @@ agent-handoff/
       hero.svg
       workflow.svg
       scenarios.svg
+  templates/
+    claude-settings-hooks.json
+    handoff-watch.mjs
   references/
     codex-rules.md
     claude-rules.md
@@ -361,9 +390,11 @@ AGENT_HANDOFF.md
 - `references/templates.md`：`AGENT_HANDOFF.md` 和 `AGENT_SESSION_PROMPTS.md` 模板。
 - `references/codex-rules.md`：Codex `AGENTS.md` handoff 规则区块。
 - `references/claude-rules.md`：Claude Code `.claude/CLAUDE.md` handoff 规则区块。
-- `references/hooks.md`：可选 hook 强约束示例。
+- `references/hooks.md`：可选 hook 提醒示例，仅用于 Claude Code，必须始终 `approve` 并以 `0` 退出，不应阻断或关闭会话。
+- `templates/claude-settings-hooks.json`：Claude Code `.claude/settings.json` hook 片段模板，供手动合并或脚本安装使用。
+- `templates/handoff-watch.mjs`：Claude Code 接力提醒 hook 脚本模板。
 - `references/quality.md`：审查、修复、压缩接力文档时使用的质量标准。
-- `scripts/bootstrap_handoff.py`：保守的初始化脚本，负责创建缺失文件、多文档或单文档结构，以及幂等合并规则。
+- `scripts/bootstrap_handoff.py`：保守的初始化脚本，负责创建缺失文件、多文档或单文档结构、幂等合并规则，并可按需安装 Claude Code 软提醒 hook。
 - `README.md` / `README_en.md`：GitHub 展示文档，不参与 skill 运行。
 
 ## 设计原则
@@ -435,6 +466,10 @@ AGENT_HANDOFF.md
 
 - 如果项目决定把 `AGENT_HANDOFF.md` 提交进 Git，应谨慎记录内容，避免私密上下文、路径、日志或内部信息泄露。
 - 如果项目把接力文档放进 `.gitignore`，要确保团队知道它是本地状态文件。
-- hook 只是可选增强，不应该替代 Agent 自己的 closeout 责任。
+- hook 只是可选增强，不应该替代 Agent 自己的 closeout 责任；默认初始化不会安装 hook，只有显式使用 `--install-hooks` 才会写入 `.claude/hooks/handoff-watch.mjs` 并合并 `.claude/settings.json`。
+- 如果目标项目已有无 Agent handoff marker 的 `.claude/hooks/handoff-watch.mjs`，脚本会保留它且不会自动把 settings 指向该未知脚本，避免误接入可能阻断会话的自定义 hook。
 - `bootstrap_handoff.py` 不会覆盖已有 `AGENT_HANDOFF.md`，因为已有接力状态必须由 Agent 基于仓库事实修复。
 
+## License
+
+按你的仓库 License 使用。如果你还没有添加 License，建议在 GitHub 上选择一个明确的开源许可证，例如 MIT。
