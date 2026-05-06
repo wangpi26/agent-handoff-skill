@@ -2,8 +2,6 @@
 
 [中文](README.md) | [English](README_en.md)
 
-If this skill helps your agent handoff workflow, please consider giving the repository a Star so more people can find it.
-
 ![Agent Handoff Skill hero](assets/readme/hero.svg)
 
 A **durable handoff mechanism skill** for Codex, Claude Code, and other AI coding agents.
@@ -340,7 +338,7 @@ Then apply:
 python scripts\bootstrap_handoff.py --repo . --install-hooks
 ```
 
-This creates `.claude/hooks/handoff-watch.mjs` and merges missing `SessionStart`, `Stop`, and `SubagentStop` hook entries into `.claude/settings.json`. The hook is advisory only: it always emits `decision: "approve"`, always exits `0`, and will not terminate the session if `AGENT_HANDOFF.md` is missing or the check fails unexpectedly.
+This creates `.claude/hooks/handoff-watch.mjs` and merges missing `SessionStart`, `Stop`, and `SubagentStop` hook entries into `.claude/settings.json`. The hook is advisory only: it emits no stdout when the handoff state is clean; emits `continue: true` and `systemMessage` when a reminder is needed; always exits `0`; and will not terminate the session if `AGENT_HANDOFF.md` is missing or the check fails unexpectedly.
 
 ## Repository Structure
 
@@ -390,7 +388,7 @@ Responsibilities:
 - `references/templates.md`: Templates for `AGENT_HANDOFF.md` and `AGENT_SESSION_PROMPTS.md`.
 - `references/codex-rules.md`: Codex `AGENTS.md` handoff rule block.
 - `references/claude-rules.md`: Claude Code `.claude/CLAUDE.md` handoff rule block.
-- `references/hooks.md`: Optional Claude Code hook reminder examples. Hooks must always `approve`, exit `0`, and never block or close the session.
+- `references/hooks.md`: Optional Claude Code hook reminder examples. Hooks must always exit `0`, never return `decision: "block"` or `continue: false`, and never block or close the session.
 - `templates/claude-settings-hooks.json`: Claude Code `.claude/settings.json` hook snippet template for manual merge or script installation.
 - `templates/handoff-watch.mjs`: Claude Code handoff reminder hook script template.
 - `references/quality.md`: Quality standards for reviewing, repairing, and compressing handoff documents.

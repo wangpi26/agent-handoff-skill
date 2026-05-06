@@ -75,7 +75,7 @@ Useful flags:
 - `--session-prompts`: Create `AGENT_SESSION_PROMPTS.md` if missing.
 - `--gitignore`: Add local handoff files to `.gitignore` if missing.
 - `--allow-readonly`: Claude Code only. Merge safe read-only query permissions into `.claude/settings.json`.
-- `--install-hooks`: Claude Code only. Install advisory handoff hook script and merge missing hook entries into `.claude/settings.json`. Hooks always approve and exit `0`.
+- `--install-hooks`: Claude Code only. Install advisory handoff hook script and merge missing hook entries into `.claude/settings.json`. Hooks always exit `0`, never block, and only emit `systemMessage` reminders when needed.
 - `--skip-codex-rules`: Do not create or update `AGENTS.md`.
 - `--skip-claude-rules`: Do not create or update `.claude/CLAUDE.md`.
 - `--dry-run`: Show planned changes without writing files.

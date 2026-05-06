@@ -2,8 +2,6 @@
 
 [中文](README.md) | [English](README_en.md)
 
-如果这个 skill 对你的 Agent 接力流程有帮助，欢迎给仓库点一个 Star，让更多人更容易找到它。
-
 ![Agent Handoff Skill hero](assets/readme/hero.svg)
 
 一个给 Codex / Claude Code / AI Coding Agent 使用的 **可持续接力机制 skill**。
@@ -340,7 +338,7 @@ python scripts\bootstrap_handoff.py --repo . --install-hooks --dry-run
 python scripts\bootstrap_handoff.py --repo . --install-hooks
 ```
 
-这会创建 `.claude/hooks/handoff-watch.mjs`，并把 `SessionStart`、`Stop`、`SubagentStop` 的缺失 hook 条目合并进 `.claude/settings.json`。该 hook 只做软提醒：始终输出 `decision: "approve"`，始终以 `0` 退出，不会因为 `AGENT_HANDOFF.md` 缺失或脚本检查异常而终止会话。
+这会创建 `.claude/hooks/handoff-watch.mjs`，并把 `SessionStart`、`Stop`、`SubagentStop` 的缺失 hook 条目合并进 `.claude/settings.json`。该 hook 只做软提醒：状态正常时不输出 stdout；需要提醒时输出 `continue: true` 和 `systemMessage`；始终以 `0` 退出，不会因为 `AGENT_HANDOFF.md` 缺失或脚本检查异常而终止会话。
 
 ## 目录结构
 
@@ -390,7 +388,7 @@ AGENT_HANDOFF.md
 - `references/templates.md`：`AGENT_HANDOFF.md` 和 `AGENT_SESSION_PROMPTS.md` 模板。
 - `references/codex-rules.md`：Codex `AGENTS.md` handoff 规则区块。
 - `references/claude-rules.md`：Claude Code `.claude/CLAUDE.md` handoff 规则区块。
-- `references/hooks.md`：可选 hook 提醒示例，仅用于 Claude Code，必须始终 `approve` 并以 `0` 退出，不应阻断或关闭会话。
+- `references/hooks.md`：可选 hook 提醒示例，仅用于 Claude Code，必须始终以 `0` 退出，不返回 `decision: "block"` 或 `continue: false`，不应阻断或关闭会话。
 - `templates/claude-settings-hooks.json`：Claude Code `.claude/settings.json` hook 片段模板，供手动合并或脚本安装使用。
 - `templates/handoff-watch.mjs`：Claude Code 接力提醒 hook 脚本模板。
 - `references/quality.md`：审查、修复、压缩接力文档时使用的质量标准。

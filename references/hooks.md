@@ -9,7 +9,9 @@ This hook guidance is optional and Claude Code specific. Codex does not use this
 - Keep hooks lightweight, local, and project-scoped.
 - Prefer soft reminders over blocking the workflow.
 - Always emit valid JSON from hook scripts.
-- Always return `decision: "approve"` and exit with status code `0`, including error paths.
+- Always exit with status code `0`, including error paths.
+- Never return `decision: "block"` or `continue: false`.
+- Do not return `decision: "approve"`; for non-blocking events, omit `decision` and use `systemMessage` only when a reminder is needed.
 - Never use hook failures to terminate, block, or close an agent session.
 - Do not use hooks to write speculative task status.
 - Put scripts under `.claude/hooks/` and reference them from `.claude/settings.json`.
@@ -55,10 +57,19 @@ When manually installing hooks, merge the `hooks` object from `templates/claude-
 
 ## Safety Contract
 
-The hook is an advisory reminder, not an enforcement gate. It must approve even when:
+The hook is an advisory reminder, not an enforcement gate. It must allow the session to continue even when:
 
 - `AGENT_HANDOFF.md` is missing.
 - `.agent-handoff/` files are incomplete.
 - The script encounters an unexpected runtime error.
+
+For a clean handoff state, the hook exits `0` with no stdout. For reminders, it exits `0` with JSON like:
+
+```json
+{
+  "continue": true,
+  "systemMessage": "Update the handoff before final response if repository state changed."
+}
+```
 
 If stricter enforcement is desired, do not change this template to block by default. First confirm the desired behavior with the user and document the operational risk, because a blocking hook can interrupt normal agent closeout or session startup.

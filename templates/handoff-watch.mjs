@@ -6,17 +6,19 @@ const projectDir = process.env.CLAUDE_PROJECT_DIR || process.cwd();
 const handoffPath = path.join(projectDir, "AGENT_HANDOFF.md");
 const handoffDir = path.join(projectDir, ".agent-handoff");
 
-function approve(reason) {
-  process.stdout.write(JSON.stringify({
-    decision: "approve",
-    reason
-  }));
+function softReminder(reason) {
+  if (reason) {
+    process.stdout.write(JSON.stringify({
+      continue: true,
+      systemMessage: reason
+    }));
+  }
   process.exit(0);
 }
 
 try {
   if (!fs.existsSync(handoffPath)) {
-    approve("AGENT_HANDOFF.md is missing. If this is a meaningful project task, create it before closeout.");
+    softReminder("AGENT_HANDOFF.md is missing. If this is a meaningful project task, create it before closeout.");
   }
 
   const stat = fs.statSync(handoffPath);
@@ -53,10 +55,10 @@ try {
   if (ageMinutes > 120) reminders.push(`AGENT_HANDOFF.md was last modified about ${ageMinutes} minutes ago.`);
   if (missing.length) reminders.push(`Missing expected sections: ${missing.join(", ")}.`);
 
-  approve(reminders.length
+  softReminder(reminders.length
     ? reminders.join(" ") + " Update the handoff before final response if repository state changed."
-    : "Handoff files exist and have the expected core structure.");
+    : "");
 } catch (error) {
-  approve(`Handoff hook check failed softly: ${error.message}. Manually verify AGENT_HANDOFF.md before closeout.`);
+  softReminder(`Handoff hook check failed softly: ${error.message}. Manually verify AGENT_HANDOFF.md before closeout.`);
 }
 // AGENT_HANDOFF_HOOK:END
