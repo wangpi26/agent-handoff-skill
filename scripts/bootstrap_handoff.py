@@ -490,6 +490,10 @@ To avoid stale snippets, line-number drift, or large unnecessary reads:
 5. If a read method becomes unreliable, use shell verification commands such as `wc -l`, `rg -n`, and small-range reads with quoted paths.
 6. Do not propose or edit code based on uncertain offsets; re-anchor with search results first.
 
+## Continuation Recovery Guard
+
+If the user says `continue`, `继续`, `Continue from where you left off.`, or any equivalent continuation request, treat it as an explicit instruction to resume the task. Do not answer `No response requested.` and do not stop silently. First state the last known objective and next concrete action, then continue. If context is insufficient, recover from the handoff files and task-relevant source files before acting.
+
 ## Durable Handoff Memory
 
 {memory}
@@ -547,6 +551,8 @@ Recover the current objective, status, immediate next action, active files, bloc
 ```text
 Continue this task: <specific task>.
 
+Treat this as an explicit request to continue execution. Do not answer "No response requested." First state what you believe the previous step was, identify the next concrete action, then continue. If context is insufficient, recover from AGENT_HANDOFF.md and the required .agent-handoff files before acting.
+
 Start by reading AGENT_HANDOFF.md, then .agent-handoff/snapshot.md, .agent-handoff/risks.md, and .agent-handoff/backlog.md. Inspect task-relevant source files. Maintain the multi-document handoff: update snapshot at the start, decisions when durable choices are made, work-log when files change, validation when checks run or are skipped, and risks/backlog when follow-ups or unknowns change.
 ```
 
@@ -576,6 +582,8 @@ Recover the current objective, status, immediate next action, active files, bloc
 
 ```text
 Continue this task: <specific task>.
+
+Treat this as an explicit request to continue execution. Do not answer "No response requested." First state what you believe the previous step was, identify the next concrete action, then continue. If context is insufficient, recover from AGENT_HANDOFF.md before acting.
 
 Start by confirming project rules are loaded and reading AGENT_HANDOFF.md, then inspect task-relevant source files. Maintain AGENT_HANDOFF.md during the task: update objective and active files at the start, record decisions with reasons, record changed files, record validation commands and results, and update final status, risks, blockers, and next steps before closing.
 ```

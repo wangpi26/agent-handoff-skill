@@ -32,6 +32,10 @@ For `--layout multi`, the generated Claude Code rule instructs future agents to 
 
 `AGENT_HANDOFF.md` must remain an index. Current task state belongs in `.agent-handoff/snapshot.md`.
 
+## Continuation Recovery Guard
+
+If the user says `continue`, `继续`, `Continue from where you left off.`, or any equivalent continuation request, treat it as an explicit instruction to resume the task. Do not answer `No response requested.` and do not stop silently. First state the last known objective and next concrete action, then continue. If context is insufficient, recover from the handoff files and task-relevant source files before acting.
+
 ## Single-Document Startup Rule
 
 For `--layout single`, the generated Claude Code rule instructs future agents to read:

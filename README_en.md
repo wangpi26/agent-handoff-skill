@@ -141,6 +141,12 @@ To continue, you can say:
 Read AGENT_HANDOFF.md and continue the current task.
 ```
 
+If you have seen an agent answer `No response requested.` or silently stop after `Continue from where you left off.`, use a more explicit continuation prompt:
+
+```text
+Continue the previous task. Do not answer "No response requested" and do not stop silently. First state where you believe the previous turn stopped and what the next concrete action is, then continue. If context is insufficient, read AGENT_HANDOFF.md and the necessary handoff files to recover state.
+```
+
 ### 3. Recovering After Agent Switching or Context Compression
 
 When chat context is compressed or a new agent takes over, the dangerous case is an agent that appears to understand the project but is missing key state. This skill's rules require the new agent to:

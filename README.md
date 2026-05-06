@@ -141,6 +141,12 @@
 请读取 AGENT_HANDOFF.md，接着完成当前任务。
 ```
 
+如果你遇到过 `Continue from where you left off.` 后 Agent 输出 `No response requested.` 或静默停止，可以使用更明确的继续提示：
+
+```text
+继续刚才的任务。不要回复 No response requested，也不要静默停止。请先说明你认为上一轮做到哪里、下一步具体动作是什么，然后继续执行。如果上下文不足，请读取 AGENT_HANDOFF.md 和必要的接力文件恢复状态。
+```
+
 ### 3. Agent 更换或上下文压缩后恢复
 
 当会话上下文被压缩，或者换了新的 Agent，最危险的是“看起来知道项目，实际上缺少关键状态”。这个 skill 的规则会要求新 Agent：

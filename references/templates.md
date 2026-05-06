@@ -286,3 +286,9 @@ Use only for small projects or when the user explicitly wants the legacy one-fil
 ## AGENT_SESSION_PROMPTS.md
 
 Use prompts that match the chosen layout. For multi-document layout, mention `AGENT_HANDOFF.md` plus `.agent-handoff/snapshot.md`, `.agent-handoff/risks.md`, and `.agent-handoff/backlog.md` as the required startup set.
+
+For continuation prompts, include an explicit anti-noop guard so the agent does not treat "continue" as a no-response request:
+
+```text
+Treat this as an explicit request to continue execution. Do not answer "No response requested." First state what you believe the previous step was, identify the next concrete action, then continue. If context is insufficient, recover from AGENT_HANDOFF.md and the required handoff files before acting.
+```
