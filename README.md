@@ -2,6 +2,8 @@
 
 [中文](README.md) | [English](README_en.md)
 
+如果这个 skill 对你的 Agent 接力流程有帮助，欢迎给仓库点一个 Star，让更多人更容易找到它。
+
 ![Agent Handoff Skill hero](assets/readme/hero.svg)
 
 一个给 Codex / Claude Code / AI Coding Agent 使用的 **可持续接力机制 skill**。

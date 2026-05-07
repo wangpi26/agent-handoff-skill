@@ -2,6 +2,8 @@
 
 [中文](README.md) | [English](README_en.md)
 
+If this skill helps your agent handoff workflow, please consider giving the repository a Star so more people can find it.
+
 ![Agent Handoff Skill hero](assets/readme/hero.svg)
 
 A **durable handoff mechanism skill** for Codex, Claude Code, and other AI coding agents.
