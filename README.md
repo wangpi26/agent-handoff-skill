@@ -35,6 +35,8 @@
 
 `agent-handoff` 把这些经验固化为一个可复用 skill：它会指导 Agent 在仓库内创建或修复一套稳定的接力机制，并提供一个幂等 bootstrap 脚本，减少重复复制提示词和手工拼模板的错误。
 
+它还会把更保守的文件读取协议写进项目规则：`Read` 范围默认不超过 240 行，`offset` 必须按行号处理，遇到 offset 漂移、空输出、stale snippet 或 API termination 时停止继续分页读取，并用搜索或只读 shell 命令重新锚定后再行动。
+
 ## 它创建什么
 
 默认机制现在是 **多文档结构**，同时保留旧版单文档模式。
@@ -442,6 +444,10 @@ AGENT_HANDOFF.md
 ### 5. 不越权修改用户级配置
 
 默认只修改当前项目内文件。不要自动修改用户级配置，例如 `~/.codex/AGENTS.md` 或 `~/.claude/CLAUDE.md`，除非用户明确要求。
+
+### 6. 稳定读取优先于盲目翻页
+
+生成的 `AGENTS.md` 和 `.claude/CLAUDE.md` 会要求 Agent 以小范围、可锚定的方式读取文件。Read offset 必须当作行号；如果出现空输出、offset warning、行号不一致、`file is shorter than the provided offset` 或 Read 后 API termination，Agent 必须停止继续用 Read 翻页，改用 `rg -n`、`wc -l`、`sed -n` 等只读命令重新定位。
 
 ## 质量清单
 

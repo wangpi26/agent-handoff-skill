@@ -36,6 +36,17 @@ For `--layout multi`, the generated Claude Code rule instructs future agents to 
 
 If the user says `continue`, `继续`, `Continue from where you left off.`, or any equivalent continuation request, treat it as an explicit instruction to resume the task. Do not answer `No response requested.` and do not stop silently. First state the last known objective and next concrete action, then continue. If context is insufficient, recover from the handoff files and task-relevant source files before acting.
 
+## Stable File Reading Protocol
+
+Generated Claude Code rules include a defensive Read protocol:
+
+- Keep Read ranges no larger than 240 lines unless the file is known to be small.
+- Treat Read `offset` as a line number, not a character offset.
+- Stop paging with Read for a file after unexpected empty output, offset warnings, stale snippets, inconsistent line numbers, `file is shorter than the provided offset`, or API termination after a Read attempt.
+- Re-anchor with targeted search before any follow-up read after an offset failure.
+- Use small, quoted, read-only shell inspections such as `wc -l`, `rg -n`, and `sed -n '<start>,<end>p'` when Read becomes unreliable.
+- Do not propose or edit code based on uncertain offsets.
+
 ## Single-Document Startup Rule
 
 For `--layout single`, the generated Claude Code rule instructs future agents to read:

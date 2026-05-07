@@ -35,6 +35,8 @@ When AI coding agents are used on real projects over long periods, the hardest f
 
 `agent-handoff` packages those lessons into a reusable skill. It guides an agent to create or repair a stable handoff mechanism inside a repository, and it includes an idempotent bootstrap script so you do not need to keep copying large prompts or manually stitching templates together.
 
+It also writes a stricter file-reading protocol into project rules: `Read` ranges stay below 240 lines by default, `offset` is treated as a line number, and agents must stop paging with `Read` after offset drift, empty output, stale snippets, or API termination, then re-anchor with search or read-only shell inspection before acting.
+
 ## What It Creates
 
 The default mechanism is now a **multi-document layout**, while the legacy single-document layout remains supported.
@@ -442,6 +444,10 @@ Project-level rules are managed with markers. Running setup again should replace
 ### 5. Do Not Modify User-Level Config by Default
 
 The default behavior is project-local. Do not automatically modify user-level configuration such as `~/.codex/AGENTS.md` or `~/.claude/CLAUDE.md` unless the user explicitly asks.
+
+### 6. Stable Reading Before Blind Paging
+
+Generated `AGENTS.md` and `.claude/CLAUDE.md` rules require agents to read files in small, anchored ranges. Read `offset` must be treated as a line number. If Read returns empty output, offset warnings, inconsistent line numbers, `file is shorter than the provided offset`, or an API termination after a Read attempt, the agent must stop paging with Read and re-anchor with `rg -n`, `wc -l`, `sed -n`, or another read-only inspection command.
 
 ## Quality Checklist
 

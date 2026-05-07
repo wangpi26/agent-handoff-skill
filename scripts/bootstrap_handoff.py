@@ -481,14 +481,18 @@ For non-trivial development work, target production/commercial-grade quality by 
 
 ## Stable File Reading Protocol
 
-To avoid stale snippets, line-number drift, or large unnecessary reads:
+To avoid Read tool line-number or offset drift:
 
 1. Prefer dedicated search/read tools for ordinary file lookup, content search, and file reads.
 2. Confirm file size before reading large or volatile files, using line counts or targeted searches when needed.
 3. Search for exact targets first, then read small exact ranges around those targets.
-4. Keep read ranges small unless the file is known to be short.
-5. If a read method becomes unreliable, use shell verification commands such as `wc -l`, `rg -n`, and small-range reads with quoted paths.
-6. Do not propose or edit code based on uncertain offsets; re-anchor with search results first.
+4. Keep Read ranges no larger than 240 lines unless the file is known to be small.
+5. If Read returns unexpected empty output, offset warnings, stale snippets, inconsistent line numbers, `file is shorter than the provided offset`, or an API termination after a Read attempt, stop paging with Read for that file immediately.
+6. Treat Read `offset` as a line number, not a character offset. Never retry the same out-of-range offset, and never guess by adding zeros or using large approximate offsets. If the tool reports the file has N lines, all follow-up Read offsets for that file must be within `0..N`.
+7. Recover from Read offset failure by re-anchoring with a targeted `Grep` for the section/title/symbol, or by reading a small known-valid range such as offset `0`; only then read a small range around the confirmed line number.
+8. When Read becomes unreliable, use shell verification commands such as `wc -l`, `rg -n`, and `sed -n '<start>,<end>p'` with quoted paths; keep ranges small and record that fallback in validation notes when relevant.
+9. Treat read-only shell inspection commands (`wc`, `rg`, `grep`, `sed -n`, `ls`, `pwd`, and non-mutating `git status`/`git diff`/`git log`/`git ls-files`) as safe query operations. They should be pre-approved in project settings where possible so source verification does not require repeated manual approval.
+10. Do not propose or edit code based on uncertain offsets; re-anchor with search results first.
 
 ## Continuation Recovery Guard
 
