@@ -348,7 +348,7 @@ Then apply:
 python scripts\bootstrap_handoff.py --repo . --install-hooks
 ```
 
-This creates `.claude/hooks/handoff-watch.mjs` and merges missing `SessionStart`, `Stop`, and `SubagentStop` hook entries into `.claude/settings.json`. The hook is advisory only: it emits no stdout when the handoff state is clean; emits `continue: true` and `systemMessage` when a reminder is needed; always exits `0`; and will not terminate the session if `AGENT_HANDOFF.md` is missing or the check fails unexpectedly.
+This creates `.claude/hooks/handoff-watch.mjs` and merges missing `SessionStart`, `UserPromptSubmit`, `PreCompact`, `Stop`, `SubagentStop`, and `SessionEnd` hook entries into `.claude/settings.json`. The hook is event-aware and advisory only: it injects handoff health and recovery reading order on startup; adds context when the user says things like `continue`, `resume`, `handoff`, `compact`, or `closeout`; and reminds the agent before compaction or closeout. It always returns `continue: true`, never returns `decision: "block"` or `continue: false`, never writes handoff files, and will not terminate the session if `AGENT_HANDOFF.md` is missing or the check fails unexpectedly.
 
 ## Repository Structure
 
@@ -398,9 +398,9 @@ Responsibilities:
 - `references/templates.md`: Templates for `AGENT_HANDOFF.md` and `AGENT_SESSION_PROMPTS.md`.
 - `references/codex-rules.md`: Codex `AGENTS.md` handoff rule block.
 - `references/claude-rules.md`: Claude Code `.claude/CLAUDE.md` handoff rule block.
-- `references/hooks.md`: Optional Claude Code hook reminder examples. Hooks must always exit `0`, never return `decision: "block"` or `continue: false`, and never block or close the session.
+- `references/hooks.md`: Optional Claude Code event-aware hook guidance. Hooks must always exit `0`, never return `decision: "block"` or `continue: false`, never write handoff files, and never block or close the session.
 - `templates/claude-settings-hooks.json`: Claude Code `.claude/settings.json` hook snippet template for manual merge or script installation.
-- `templates/handoff-watch.mjs`: Claude Code handoff reminder hook script template.
+- `templates/handoff-watch.mjs`: Claude Code event-aware handoff reminder hook script template.
 - `references/quality.md`: Quality standards for reviewing, repairing, and compressing handoff documents.
 - `scripts/bootstrap_handoff.py`: Conservative setup script. Creates missing files, single or multi handoff layouts, idempotently merges rules, and can optionally install Claude Code soft reminder hooks.
 - `README.md` / `README_en.md`: GitHub documentation. Not required at runtime.
@@ -478,7 +478,7 @@ Multi-document layout must also satisfy:
 
 - If the project commits `AGENT_HANDOFF.md`, be careful not to include private context, sensitive paths, logs, or internal information.
 - If the project gitignores the handoff document, make sure the team understands that it is local state.
-- Hooks are optional reinforcement. They should not replace the agent's responsibility to close out properly; the default setup does not install hooks, and only explicit `--install-hooks` writes `.claude/hooks/handoff-watch.mjs` and merges `.claude/settings.json`.
+- Hooks are optional reinforcement. They should not replace the agent's responsibility to close out properly; the default setup does not install hooks, and only explicit `--install-hooks` writes `.claude/hooks/handoff-watch.mjs` and merges `.claude/settings.json`. The current hook covers `SessionStart`, `UserPromptSubmit`, `PreCompact`, `Stop`, `SubagentStop`, and `SessionEnd`, emitting only soft context or advisory reminders.
 - If the target project already has an unmarked `.claude/hooks/handoff-watch.mjs`, the script preserves it and does not wire settings to that unverified script, avoiding accidental use of custom hooks that might block a session.
 - `bootstrap_handoff.py` does not overwrite an existing `AGENT_HANDOFF.md`; existing state must be repaired from repository facts.
 

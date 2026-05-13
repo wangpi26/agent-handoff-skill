@@ -6,8 +6,32 @@
           {
             "type": "command",
             "command": "node \"$CLAUDE_PROJECT_DIR/.claude/hooks/handoff-watch.mjs\"",
-            "timeout": 20,
-            "statusMessage": "Checking AGENT_HANDOFF on session start"
+            "timeout": 10,
+            "statusMessage": "Loading handoff recovery context"
+          }
+        ]
+      }
+    ],
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"$CLAUDE_PROJECT_DIR/.claude/hooks/handoff-watch.mjs\"",
+            "timeout": 10,
+            "statusMessage": "Checking handoff prompt context"
+          }
+        ]
+      }
+    ],
+    "PreCompact": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"$CLAUDE_PROJECT_DIR/.claude/hooks/handoff-watch.mjs\"",
+            "timeout": 10,
+            "statusMessage": "Checking handoff before compaction"
           }
         ]
       }
@@ -19,7 +43,7 @@
             "type": "command",
             "command": "node \"$CLAUDE_PROJECT_DIR/.claude/hooks/handoff-watch.mjs\"",
             "timeout": 10,
-            "statusMessage": "Checking AGENT_HANDOFF closeout"
+            "statusMessage": "Checking handoff closeout"
           }
         ]
       }
@@ -32,6 +56,18 @@
             "command": "node \"$CLAUDE_PROJECT_DIR/.claude/hooks/handoff-watch.mjs\"",
             "timeout": 10,
             "statusMessage": "Checking subagent handoff closeout"
+          }
+        ]
+      }
+    ],
+    "SessionEnd": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"$CLAUDE_PROJECT_DIR/.claude/hooks/handoff-watch.mjs\"",
+            "timeout": 10,
+            "statusMessage": "Recording handoff session-end check"
           }
         ]
       }

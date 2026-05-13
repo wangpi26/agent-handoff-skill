@@ -348,7 +348,7 @@ python scripts\bootstrap_handoff.py --repo . --install-hooks --dry-run
 python scripts\bootstrap_handoff.py --repo . --install-hooks
 ```
 
-这会创建 `.claude/hooks/handoff-watch.mjs`，并把 `SessionStart`、`Stop`、`SubagentStop` 的缺失 hook 条目合并进 `.claude/settings.json`。该 hook 只做软提醒：状态正常时不输出 stdout；需要提醒时输出 `continue: true` 和 `systemMessage`；始终以 `0` 退出，不会因为 `AGENT_HANDOFF.md` 缺失或脚本检查异常而终止会话。
+这会创建 `.claude/hooks/handoff-watch.mjs`，并把 `SessionStart`、`UserPromptSubmit`、`PreCompact`、`Stop`、`SubagentStop`、`SessionEnd` 的缺失 hook 条目合并进 `.claude/settings.json`。该 hook 是事件感知的软提醒：启动时注入接力健康状态和恢复阅读顺序；用户说 `continue`、`resume`、`handoff`、`compact`、`closeout` 等相关内容时补充上下文；压缩前和收尾前提醒更新接力文档。它始终返回 `continue: true`，不返回 `decision: "block"` 或 `continue: false`，不写接力文件，不会因为 `AGENT_HANDOFF.md` 缺失或脚本检查异常而终止会话。
 
 ## 目录结构
 
@@ -398,9 +398,9 @@ AGENT_HANDOFF.md
 - `references/templates.md`：`AGENT_HANDOFF.md` 和 `AGENT_SESSION_PROMPTS.md` 模板。
 - `references/codex-rules.md`：Codex `AGENTS.md` handoff 规则区块。
 - `references/claude-rules.md`：Claude Code `.claude/CLAUDE.md` handoff 规则区块。
-- `references/hooks.md`：可选 hook 提醒示例，仅用于 Claude Code，必须始终以 `0` 退出，不返回 `decision: "block"` 或 `continue: false`，不应阻断或关闭会话。
+- `references/hooks.md`：可选 Claude Code 事件感知 hook 说明，必须始终以 `0` 退出，不返回 `decision: "block"` 或 `continue: false`，不写接力文件，不应阻断或关闭会话。
 - `templates/claude-settings-hooks.json`：Claude Code `.claude/settings.json` hook 片段模板，供手动合并或脚本安装使用。
-- `templates/handoff-watch.mjs`：Claude Code 接力提醒 hook 脚本模板。
+- `templates/handoff-watch.mjs`：Claude Code 事件感知接力提醒 hook 脚本模板。
 - `references/quality.md`：审查、修复、压缩接力文档时使用的质量标准。
 - `scripts/bootstrap_handoff.py`：保守的初始化脚本，负责创建缺失文件、多文档或单文档结构、幂等合并规则，并可按需安装 Claude Code 软提醒 hook。
 - `README.md` / `README_en.md`：GitHub 展示文档，不参与 skill 运行。
@@ -478,7 +478,7 @@ AGENT_HANDOFF.md
 
 - 如果项目决定把 `AGENT_HANDOFF.md` 提交进 Git，应谨慎记录内容，避免私密上下文、路径、日志或内部信息泄露。
 - 如果项目把接力文档放进 `.gitignore`，要确保团队知道它是本地状态文件。
-- hook 只是可选增强，不应该替代 Agent 自己的 closeout 责任；默认初始化不会安装 hook，只有显式使用 `--install-hooks` 才会写入 `.claude/hooks/handoff-watch.mjs` 并合并 `.claude/settings.json`。
+- hook 只是可选增强，不应该替代 Agent 自己的 closeout 责任；默认初始化不会安装 hook，只有显式使用 `--install-hooks` 才会写入 `.claude/hooks/handoff-watch.mjs` 并合并 `.claude/settings.json`。当前 hook 覆盖 `SessionStart`、`UserPromptSubmit`、`PreCompact`、`Stop`、`SubagentStop`、`SessionEnd`，只输出软上下文或软提醒。
 - 如果目标项目已有无 Agent handoff marker 的 `.claude/hooks/handoff-watch.mjs`，脚本会保留它且不会自动把 settings 指向该未知脚本，避免误接入可能阻断会话的自定义 hook。
 - `bootstrap_handoff.py` 不会覆盖已有 `AGENT_HANDOFF.md`，因为已有接力状态必须由 Agent 基于仓库事实修复。
 

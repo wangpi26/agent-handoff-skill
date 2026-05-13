@@ -606,115 +606,22 @@ Review and directly repair AGENT_HANDOFF.md so a new agent can take over. Check 
 """
 
 
+def skill_template_text(relative_path: str) -> str:
+    path = Path(__file__).resolve().parent.parent / relative_path
+    if not path.exists():
+        raise SystemExit(f"Missing skill template: {path}")
+    return path.read_text(encoding="utf-8").replace("\r\n", "\n")
+
+
 def hook_script_template() -> str:
-    return f"""{HOOK_SCRIPT_START}
-import fs from "node:fs";
-import path from "node:path";
-
-const projectDir = process.env.CLAUDE_PROJECT_DIR || process.cwd();
-const handoffPath = path.join(projectDir, "AGENT_HANDOFF.md");
-const handoffDir = path.join(projectDir, ".agent-handoff");
-
-function softReminder(reason) {{
-  if (reason) {{
-    process.stdout.write(JSON.stringify({{
-      continue: true,
-      systemMessage: reason
-    }}));
-  }}
-  process.exit(0);
-}}
-
-try {{
-  if (!fs.existsSync(handoffPath)) {{
-    softReminder("AGENT_HANDOFF.md is missing. If this is a meaningful project task, create it before closeout.");
-  }}
-
-  const stat = fs.statSync(handoffPath);
-  const ageMinutes = Math.round((Date.now() - stat.mtimeMs) / 60000);
-  const content = fs.readFileSync(handoffPath, "utf8");
-  const missing = [];
-
-  if (fs.existsSync(handoffDir)) {{
-    for (const rel of [
-      "snapshot.md",
-      "workspace.md",
-      "decisions.md",
-      "work-log.md",
-      "validation.md",
-      "backlog.md",
-      "risks.md",
-      "archive.md"
-    ]) {{
-      if (!fs.existsSync(path.join(handoffDir, rel))) missing.push(`.agent-handoff/${{rel}}`);
-    }}
-    if (!content.includes("## Recovery Reading Order")) missing.push("AGENT_HANDOFF.md Recovery Reading Order");
-  }} else {{
-    for (const heading of [
-      "## Handoff Snapshot",
-      "## Current Work Log",
-      "## Validation History",
-      "## Task Backlog"
-    ]) {{
-      if (!content.includes(heading)) missing.push(heading);
-    }}
-  }}
-
-  const reminders = [];
-  if (ageMinutes > 120) reminders.push(`AGENT_HANDOFF.md was last modified about ${{ageMinutes}} minutes ago.`);
-  if (missing.length) reminders.push(`Missing expected sections: ${{missing.join(", ")}}.`);
-
-  softReminder(reminders.length
-    ? reminders.join(" ") + " Update the handoff before final response if repository state changed."
-    : "");
-}} catch (error) {{
-  softReminder(`Handoff hook check failed softly: ${{error.message}}. Manually verify AGENT_HANDOFF.md before closeout.`);
-}}
-{HOOK_SCRIPT_END}
-"""
+    return skill_template_text("templates/handoff-watch.mjs")
 
 
 def hook_settings_template() -> dict:
-    return {
-        "hooks": {
-            "SessionStart": [
-                {
-                    "hooks": [
-                        {
-                            "type": "command",
-                            "command": HOOK_COMMAND,
-                            "timeout": 20,
-                            "statusMessage": "Checking AGENT_HANDOFF on session start",
-                        }
-                    ]
-                }
-            ],
-            "Stop": [
-                {
-                    "hooks": [
-                        {
-                            "type": "command",
-                            "command": HOOK_COMMAND,
-                            "timeout": 10,
-                            "statusMessage": "Checking AGENT_HANDOFF closeout",
-                        }
-                    ]
-                }
-            ],
-            "SubagentStop": [
-                {
-                    "hooks": [
-                        {
-                            "type": "command",
-                            "command": HOOK_COMMAND,
-                            "timeout": 10,
-                            "statusMessage": "Checking subagent handoff closeout",
-                        }
-                    ]
-                }
-            ],
-        }
-    }
+    data = json.loads(skill_template_text("templates/claude-settings-hooks.json"))
+    if not isinstance(data, dict) or not isinstance(data.get("hooks"), dict):
+        raise SystemExit("Invalid hook settings template: templates/claude-settings-hooks.json")
+    return data
 
 
 def read_text(path: Path) -> str:
@@ -759,7 +666,18 @@ def replace_marked_script(original: str, block: str) -> str:
     end = original.find(HOOK_SCRIPT_END)
     if start != -1 and end != -1 and end > start:
         end += len(HOOK_SCRIPT_END)
-        return original[:start].rstrip() + "\n" + block.strip() + "\n" + original[end:].lstrip()
+        prefix = original[:start].rstrip()
+        replacement = block.strip()
+        suffix = original[end:].lstrip()
+
+        if replacement.startswith("#!") and prefix:
+            if prefix.startswith("#!") and len(prefix.splitlines()) == 1:
+                prefix = ""
+            else:
+                replacement = "\n".join(replacement.splitlines()[1:])
+
+        parts = [part for part in [prefix, replacement, suffix] if part]
+        return "\n".join(parts) + "\n"
     return original
 
 

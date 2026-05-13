@@ -1,25 +1,26 @@
-# Optional Hook Enforcement
+# Optional Claude Code Hook Enforcement
 
-Use hooks only when the user asks for stronger enforcement than written project rules. Hooks should check and remind; they should not auto-generate complex handoff content because that risks writing false state. The provided templates support both single-document and multi-document handoff layouts.
+Use hooks only when the user asks for stronger operational reminders than written project rules. Hooks must check and remind; they must not generate handoff content, because closeout state needs repository context and agent judgment.
 
-This hook guidance is optional and Claude Code specific. Codex does not use this hook snippet, and the default bootstrap command does not install hooks unless `--install-hooks` is passed.
+This hook guidance is Claude Code specific. Codex does not use Claude hooks, and the default bootstrap command does not install hooks unless `--install-hooks` is passed.
 
-## Principles
+## Safety Contract
 
 - Keep hooks lightweight, local, and project-scoped.
-- Prefer soft reminders over blocking the workflow.
-- Always emit valid JSON from hook scripts.
+- Always emit valid JSON when output is needed.
 - Always exit with status code `0`, including error paths.
-- Never return `decision: "block"` or `continue: false`.
-- Do not return `decision: "approve"`; for non-blocking events, omit `decision` and use `systemMessage` only when a reminder is needed.
+- Always return `continue: true` when returning JSON.
+- Never return `decision: "block"`, `continue: false`, or `decision: "approve"`.
 - Never use hook failures to terminate, block, or close an agent session.
-- Do not use hooks to write speculative task status.
-- Put scripts under `.claude/hooks/` and reference them from `.claude/settings.json`.
+- Never write handoff files from a hook.
+- Never call the network, install dependencies, delete files, start services, or mutate project state.
 - Preserve existing user hook scripts unless they contain the Agent handoff hook markers.
+
+`statusMessage` belongs to `.claude/settings.json` and is only a Claude Code UI label while a hook command runs. The hook script must not depend on it. Event behavior must come from Claude Code hook stdin JSON, especially `hook_event_name`.
 
 ## Recommended Install
 
-Use the bootstrap script when the user explicitly asks for hooks:
+Use the bootstrap script only when the user explicitly asks for hooks:
 
 ```bash
 python <skill-dir>/scripts/bootstrap_handoff.py --repo <repo-root> --install-hooks
@@ -28,7 +29,7 @@ python <skill-dir>/scripts/bootstrap_handoff.py --repo <repo-root> --install-hoo
 This command:
 
 - Creates `.claude/hooks/handoff-watch.mjs` if missing.
-- Replaces only the marked Agent handoff block in `.claude/hooks/handoff-watch.mjs` if the markers already exist.
+- Replaces only the marked Agent handoff hook block if the target script already contains the hook markers.
 - Preserves an existing `.claude/hooks/handoff-watch.mjs` with no Agent handoff markers.
 - Merges missing hook entries into `.claude/settings.json`.
 - Avoids duplicating hook commands on repeated runs.
@@ -41,12 +42,12 @@ python <skill-dir>/scripts/bootstrap_handoff.py --repo <repo-root> --install-hoo
 
 ## Template Files
 
-- `templates/claude-settings-hooks.json`: Minimal `.claude/settings.json` hook snippet.
-- `templates/handoff-watch.mjs`: Advisory hook script that checks handoff file freshness and expected structure.
+- `templates/claude-settings-hooks.json`: Event-aware `.claude/settings.json` hook snippet for manual merge or script installation.
+- `templates/handoff-watch.mjs`: Complete advisory hook script that checks handoff file freshness and structure.
 
-When manually installing hooks, merge the `hooks` object from `templates/claude-settings-hooks.json` into the project's `.claude/settings.json` instead of overwriting unrelated settings.
+When manually installing hooks, merge only the `hooks` object from `templates/claude-settings-hooks.json` into the project's `.claude/settings.json`. Do not overwrite unrelated settings.
 
-## Expected Target Files
+## Installed Target Files
 
 ```text
 .claude/
@@ -55,21 +56,82 @@ When manually installing hooks, merge the `hooks` object from `templates/claude-
     handoff-watch.mjs
 ```
 
-## Safety Contract
+## Supported Events
 
-The hook is an advisory reminder, not an enforcement gate. It must allow the session to continue even when:
+| Event | Behavior |
+| --- | --- |
+| `SessionStart` | Inject handoff health and recovery reading guidance as additional context. |
+| `UserPromptSubmit` | Inject context only when the prompt suggests handoff, continue, resume, compact, closeout, or recovery work, or when handoff structure is missing. |
+| `PreCompact` | Remind the agent to update handoff files before compaction if task state changed. |
+| `Stop` | Remind the agent to update relevant handoff files before final response if repository state changed. |
+| `SubagentStop` | Same closeout reminder behavior as `Stop`, with stop-loop suppression. |
+| `SessionEnd` | Emit a quiet session-end summary. |
 
-- `AGENT_HANDOFF.md` is missing.
-- `.agent-handoff/` files are incomplete.
-- The script encounters an unexpected runtime error.
+## Checks
 
-For a clean handoff state, the hook exits `0` with no stdout. For reminders, it exits `0` with JSON like:
+General checks:
 
-```json
-{
-  "continue": true,
-  "systemMessage": "Update the handoff before final response if repository state changed."
-}
+- `AGENT_HANDOFF.md` exists.
+- `AGENT_HANDOFF.md` is not older than the configured threshold.
+- Claude Code hook stdin JSON can be parsed.
+
+Multi-document layout checks:
+
+- `.agent-handoff/` exists.
+- Expected files exist: `snapshot.md`, `workspace.md`, `decisions.md`, `work-log.md`, `validation.md`, `backlog.md`, `risks.md`, `archive.md`.
+- `AGENT_HANDOFF.md` contains `## Recovery Reading Order`.
+- `AGENT_HANDOFF.md` contains `## Handoff Layout`.
+- `.agent-handoff/snapshot.md` contains `## Current State` when the snapshot file is present.
+
+Single-document layout checks:
+
+- `AGENT_HANDOFF.md` contains `## Handoff Snapshot`.
+- `AGENT_HANDOFF.md` contains `## Current Work Log`.
+- `AGENT_HANDOFF.md` contains `## Validation History`.
+- `AGENT_HANDOFF.md` contains `## Task Backlog`.
+
+## Output Policy
+
+The hook is advisory only. It explicitly returns `continue: true` and never emits a blocking decision.
+
+It may use:
+
+- `hookSpecificOutput.additionalContext` for startup and prompt-context injection.
+- `systemMessage` for closeout, compaction, manual, or error reminders.
+- `suppressOutput: true` for quiet no-op paths such as irrelevant `UserPromptSubmit`, active stop-loop suppression, and `SessionEnd`.
+
+The hook should surface useful reminders without taking control away from the agent.
+
+## Retry Policy
+
+Retry only narrow failures that may be transient inside the current hook process:
+
+- stdin read problems
+- JSON parse problems from incomplete hook input
+
+Repository state problems are not retried because retrying would not change them:
+
+- missing handoff files
+- missing required sections
+- stale timestamps
+- mixed or incomplete layout
+
+Report repository state problems directly to the agent.
+
+## Arguments And Environment
+
+| Name | Purpose |
+| --- | --- |
+| `--project-dir <path>` | Set project root for manual testing. |
+| `--event <name>` | Set the hook event when stdin is not provided. |
+| `--max-age-minutes <n>` | Set stale handoff threshold. Default is `120`. |
+| `CLAUDE_PROJECT_DIR` | Project root from Claude Code. Preferred over stdin `cwd`. |
+| `HANDOFF_MAX_AGE_MINUTES=<n>` | Same as `--max-age-minutes <n>`. |
+
+Manual test:
+
+```bash
+node .claude/hooks/handoff-watch.mjs --project-dir <repo-root> --event Stop
 ```
 
-If stricter enforcement is desired, do not change this template to block by default. First confirm the desired behavior with the user and document the operational risk, because a blocking hook can interrupt normal agent closeout or session startup.
+If stricter enforcement is desired, do not change this template to block by default. First confirm the desired behavior with the user and document the operational risk, because a blocking hook can interrupt normal closeout or startup.

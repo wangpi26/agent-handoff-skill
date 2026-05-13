@@ -43,7 +43,7 @@ The same `SKILL.md`, `references/`, and `scripts/` are shared across platforms. 
 - `AGENT_SESSION_PROMPTS.md`: Optional reusable prompts for new window startup, continuation, closeout, and quality review.
 - `.gitignore`: Optionally add local handoff files when the project does not want to commit them.
 - `.claude/settings.json`: Claude Code only. Optionally merge safe read-only permission allow rules or advisory handoff hooks if the user explicitly asks.
-- `.claude/hooks/handoff-watch.mjs`: Claude Code only. Optional advisory hook script installed only when the user asks for hook reminders.
+- `.claude/hooks/handoff-watch.mjs`: Claude Code only. Optional event-aware advisory hook script installed only when the user asks for hook reminders.
 
 ## Idempotency Rules
 
@@ -75,7 +75,7 @@ Useful flags:
 - `--session-prompts`: Create `AGENT_SESSION_PROMPTS.md` if missing.
 - `--gitignore`: Add local handoff files to `.gitignore` if missing.
 - `--allow-readonly`: Claude Code only. Merge safe read-only query permissions into `.claude/settings.json`.
-- `--install-hooks`: Claude Code only. Install advisory handoff hook script and merge missing hook entries into `.claude/settings.json`. Hooks always exit `0`, never block, and only emit `systemMessage` reminders when needed.
+- `--install-hooks`: Claude Code only. Install event-aware advisory handoff hook script and merge missing hook entries into `.claude/settings.json`. Hooks always exit `0`, never block, never write handoff files, and only emit soft `hookSpecificOutput.additionalContext` or `systemMessage` reminders when needed.
 - `--skip-codex-rules`: Do not create or update `AGENTS.md`.
 - `--skip-claude-rules`: Do not create or update `.claude/CLAUDE.md`.
 - `--dry-run`: Show planned changes without writing files.
@@ -108,7 +108,7 @@ Load only the references needed for the task:
 - `references/hooks.md`: Read only when the user asks for hook-based enforcement.
 - `references/quality.md`: Read when reviewing, compressing, repairing, or validating a handoff mechanism.
 - `templates/claude-settings-hooks.json`: Claude Code hook settings snippet for manual review or installation.
-- `templates/handoff-watch.mjs`: Claude Code advisory hook script template.
+- `templates/handoff-watch.mjs`: Claude Code event-aware advisory hook script template.
 
 ## Closeout
 
