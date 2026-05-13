@@ -191,7 +191,7 @@ The skill uses `references/quality.md` to turn noisy state back into factual ope
 Clone or copy this repository into your Codex skills directory:
 
 ```powershell
-git clone https://github.com/<your-name>/agent-handoff-skill.git C:\Users\<you>\.codex\skills\agent-handoff
+git clone https://github.com/WeirdSky924/agent-handoff-skill C:\Users\<you>\.codex\skills\agent-handoff
 ```
 
 If you already have it locally:
@@ -211,7 +211,7 @@ Use the agent-handoff skill to initialize a handoff mechanism for the current pr
 Clone or copy this repository into Claude Code's personal skills directory:
 
 ```powershell
-git clone https://github.com/<your-name>/agent-handoff-skill.git C:\Users\<you>\.claude\skills\agent-handoff
+git clone https://github.com/WeirdSky924/agent-handoff-skill C:\Users\<you>\.claude\skills\agent-handoff
 ```
 
 If you already have it locally:
@@ -238,7 +238,7 @@ If you want the skill to travel with a repository and be available to teammates,
 
 ```powershell
 mkdir .claude\skills
-git clone https://github.com/<your-name>/agent-handoff-skill.git .claude\skills\agent-handoff
+git clone https://github.com/WeirdSky924/agent-handoff-skill .claude\skills\agent-handoff
 ```
 
 Use project-level installation for team-standard workflows. Use personal installation when you want the skill available across all of your projects.
