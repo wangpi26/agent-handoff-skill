@@ -7,7 +7,7 @@
             "type": "command",
             "command": "node \"$CLAUDE_PROJECT_DIR/.claude/hooks/handoff-watch.mjs\"",
             "timeout": 10,
-            "statusMessage": "Loading handoff recovery context"
+            "statusMessage": "加载 handoff 恢复上下文"
           }
         ]
       }
@@ -19,7 +19,7 @@
             "type": "command",
             "command": "node \"$CLAUDE_PROJECT_DIR/.claude/hooks/handoff-watch.mjs\"",
             "timeout": 10,
-            "statusMessage": "Checking handoff prompt context"
+            "statusMessage": "检查 handoff 提示上下文"
           }
         ]
       }
@@ -31,7 +31,7 @@
             "type": "command",
             "command": "node \"$CLAUDE_PROJECT_DIR/.claude/hooks/handoff-watch.mjs\"",
             "timeout": 10,
-            "statusMessage": "Checking handoff before compaction"
+            "statusMessage": "压缩前检查 handoff"
           }
         ]
       }
@@ -43,7 +43,7 @@
             "type": "command",
             "command": "node \"$CLAUDE_PROJECT_DIR/.claude/hooks/handoff-watch.mjs\"",
             "timeout": 10,
-            "statusMessage": "Checking handoff closeout"
+            "statusMessage": "检查 handoff 收尾"
           }
         ]
       }
@@ -55,7 +55,7 @@
             "type": "command",
             "command": "node \"$CLAUDE_PROJECT_DIR/.claude/hooks/handoff-watch.mjs\"",
             "timeout": 10,
-            "statusMessage": "Checking subagent handoff closeout"
+            "statusMessage": "检查 subagent handoff 收尾"
           }
         ]
       }
@@ -67,7 +67,7 @@
             "type": "command",
             "command": "node \"$CLAUDE_PROJECT_DIR/.claude/hooks/handoff-watch.mjs\"",
             "timeout": 10,
-            "statusMessage": "Recording handoff session-end check"
+            "statusMessage": "记录 handoff 会话结束检查"
           }
         ]
       }

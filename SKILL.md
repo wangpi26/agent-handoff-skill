@@ -1,53 +1,53 @@
 ---
 name: agent-handoff
-description: Cross-platform Codex and Claude Code skill for creating, updating, repairing, or reviewing durable repository handoff mechanisms. Supports single-document and multi-document layouts. Use when the user asks to bootstrap cross-session project memory, create or maintain AGENT_HANDOFF.md and .agent-handoff state files, add Codex AGENTS.md rules, add Claude Code .claude/CLAUDE.md rules, create reusable session prompts, install optional Claude Code advisory hooks, enforce closeout, repair stale handoff state, or review handoff quality. Install under ~/.codex/skills/agent-handoff for Codex, ~/.claude/skills/agent-handoff for Claude Code personal use, or repo/.claude/skills/agent-handoff for Claude Code project use.
+description: 用于创建、更新、修复或审查持久化仓库接力机制的跨平台 Codex 和 Claude Code skill。支持单文档和多文档布局。适用于用户要求引导跨会话项目记忆、创建或维护 AGENT_HANDOFF.md 与 .agent-handoff 状态文件、添加 Codex AGENTS.md 规则、添加 Claude Code .claude/CLAUDE.md 规则、创建可复用会话提示、安装可选 Claude Code 提醒 hook、强制收尾、修复过期接力状态或审查接力质量。Codex 使用时安装到 ~/.codex/skills/agent-handoff；Claude Code 个人使用时安装到 ~/.claude/skills/agent-handoff；Claude Code 项目使用时安装到 repo/.claude/skills/agent-handoff。
 ---
 
 # Agent Handoff
 
-## Overview
+## 概述
 
-Use this cross-platform skill in Codex or Claude Code to establish repository-local continuity memory so a future agent can recover objective, status, decisions, validation, risks, and next actions without relying on previous chat history.
+在 Codex 或 Claude Code 中使用这个跨平台 skill，为仓库建立本地连续性记忆，让未来 Agent 不依赖旧聊天历史也能恢复目标、状态、决策、验证、风险和下一步动作。
 
-The handoff mechanism is repository-local by default. Do not edit user-level `~/.claude/CLAUDE.md` or other user-level agent configuration unless the user explicitly asks for it.
+接力机制默认只作用于仓库本地。除非用户明确要求，不要编辑用户级 `~/.claude/CLAUDE.md` 或其他用户级 Agent 配置。
 
-## Platform Installation
+## 平台安装
 
-- Codex personal skill: install this folder at `~/.codex/skills/agent-handoff`.
-- Claude Code personal skill: install this folder at `~/.claude/skills/agent-handoff`.
-- Claude Code project skill: install this folder at `<repo>/.claude/skills/agent-handoff`.
+- Codex 个人 skill：将此目录安装到 `~/.codex/skills/agent-handoff`。
+- Claude Code 个人 skill：将此目录安装到 `~/.claude/skills/agent-handoff`。
+- Claude Code 项目 skill：将此目录安装到 `<repo>/.claude/skills/agent-handoff`。
 
-The same `SKILL.md`, `references/`, and `scripts/` are shared across platforms. `agents/openai.yaml` is Codex UI metadata and is not required by Claude Code.
+同一份 `SKILL.md`、`references/` 和 `scripts/` 可跨平台共享。`agents/openai.yaml` 是 Codex UI 元数据，Claude Code 不需要它。
 
-## Layout Choice
+## 布局选择
 
-- `multi` layout is the default for real projects. It creates `AGENT_HANDOFF.md` as a short index and `.agent-handoff/*.md` for state files.
-- `single` layout is the legacy compact mode for small projects. It keeps all recovery state in `AGENT_HANDOFF.md`.
-- Do not force-migrate an existing `AGENT_HANDOFF.md`. If it exists, preserve it and repair or migrate manually from repository facts.
+- `multi` 布局是真实项目的默认选择。它会创建简短索引 `AGENT_HANDOFF.md`，并用 `.agent-handoff/*.md` 保存状态文件。
+- `single` 布局是小项目使用的旧版紧凑模式。它把所有恢复状态保存在 `AGENT_HANDOFF.md` 中。
+- 不要强制迁移已有 `AGENT_HANDOFF.md`。如果该文件已存在，应保留它，并基于仓库事实手动修复或迁移。
 
-## Workflow
+## 工作流程
 
-1. Inspect the repository before writing files.
-2. Identify existing agent guidance files: `AGENTS.md`, `CLAUDE.md`, `.claude/CLAUDE.md`, `.claude/rules/`, `.claude/settings.json`, README files, docs, source roots, test configuration, and obvious subprojects.
-3. If bootstrapping a new mechanism, prefer running `scripts/bootstrap_handoff.py` from this skill to create safe scaffolding and idempotent project handoff rule blocks.
-4. If repairing or reviewing an existing mechanism, read `references/quality.md`, inspect the current files, then edit the repository files directly with factual updates.
-5. Always keep the handoff content evidence-based. Use `UNKNOWN` for facts that cannot be verified from the repository or user request.
-6. Re-read files you created or changed before reporting completion.
+1. 写入文件前先检查仓库。
+2. 识别已有 Agent 指导文件：`AGENTS.md`、`CLAUDE.md`、`.claude/CLAUDE.md`、`.claude/rules/`、`.claude/settings.json`、README 文件、文档、源码根目录、测试配置和明显的子项目。
+3. 如果要初始化新机制，优先运行此 skill 中的 `scripts/bootstrap_handoff.py`，用安全脚手架和幂等项目接力规则区块完成创建。
+4. 如果要修复或审查已有机制，先读取 `references/quality.md`，检查当前文件，然后直接用事实更新仓库文件。
+5. 始终保持接力内容有证据支撑。对无法从仓库或用户请求中验证的事实使用 `UNKNOWN`。
+6. 报告完成前，重新读取已创建或修改的文件。
 
-## Default Files
+## 默认文件
 
-- `AGENT_HANDOFF.md`: Required durable handoff state at the repository root.
-- `.agent-handoff/`: Multi-document layout directory for snapshot, workspace, decisions, work log, validation, backlog, risks, and archive.
-- `AGENTS.md`: Recommended Codex project instructions file. Merge a marked handoff protocol block; do not overwrite unrelated project guidance.
-- `.claude/CLAUDE.md`: Recommended project-level Claude Code rules generated for repositories that use Claude Code. Merge a marked handoff protocol block; do not overwrite unrelated rules.
-- `AGENT_SESSION_PROMPTS.md`: Optional reusable prompts for new window startup, continuation, closeout, and quality review.
-- `.gitignore`: Optionally add local handoff files when the project does not want to commit them.
-- `.claude/settings.json`: Claude Code only. Optionally merge safe read-only permission allow rules or advisory handoff hooks if the user explicitly asks.
-- `.claude/hooks/handoff-watch.mjs`: Claude Code only. Optional event-aware advisory hook script installed only when the user asks for hook reminders.
+- `AGENT_HANDOFF.md`：仓库根目录下必需的持久化接力状态。
+- `.agent-handoff/`：多文档布局目录，用于 snapshot、workspace、decisions、work log、validation、backlog、risks 和 archive。
+- `AGENTS.md`：推荐的 Codex 项目 instructions 文件。合并带标记的接力协议区块；不要覆盖无关项目指导。
+- `.claude/CLAUDE.md`：推荐的项目级 Claude Code 规则，为使用 Claude Code 的仓库生成。合并带标记的接力协议区块；不要覆盖无关规则。
+- `AGENT_SESSION_PROMPTS.md`：可选的可复用提示文件，用于新窗口启动、继续任务、收尾和质量审查。
+- `.gitignore`：当项目不希望提交本地接力文件时，可选择加入忽略规则。
+- `.claude/settings.json`：仅 Claude Code 使用。只有用户明确要求时，才可选择合并安全只读权限 allow 规则或提醒型接力 hook。
+- `.claude/hooks/handoff-watch.mjs`：仅 Claude Code 使用。可选的事件感知提醒 hook 脚本，只在用户要求 hook 提醒时安装。
 
-## Idempotency Rules
+## 幂等规则
 
-Use these markers for both Codex `AGENTS.md` and Claude Code `.claude/CLAUDE.md` project-level handoff rules:
+对 Codex `AGENTS.md` 和 Claude Code `.claude/CLAUDE.md` 的项目级接力规则都使用这些 marker：
 
 ```markdown
 <!-- AGENT_HANDOFF_PROTOCOL:START -->
@@ -55,66 +55,66 @@ Use these markers for both Codex `AGENTS.md` and Claude Code `.claude/CLAUDE.md`
 <!-- AGENT_HANDOFF_PROTOCOL:END -->
 ```
 
-If both markers already exist, replace only the content between them. If the target file exists without markers, append the marked block after the existing content. Never duplicate the protocol block.
+如果两个 marker 都已存在，只替换它们之间的内容。如果目标文件存在但没有 marker，在既有内容后追加带 marker 的区块。不要重复写入协议区块。
 
-Do not overwrite an existing `AGENT_HANDOFF.md` with a template. Existing handoff state must be repaired by reading repository facts and editing stale or missing sections.
+不要用模板覆盖已有 `AGENT_HANDOFF.md`。已有接力状态必须通过读取仓库事实并编辑过期或缺失章节来修复。
 
-## Bootstrap Script
+## Bootstrap 脚本
 
-Use the script for deterministic setup:
+使用脚本进行确定性初始化：
 
 ```bash
 python <skill-dir>/scripts/bootstrap_handoff.py --repo <repo-root> --platform both --layout multi --session-prompts --gitignore
 ```
 
-Useful flags:
+常用参数：
 
-- `--repo <path>`: Target repository root. Defaults to the current working directory.
-- `--platform codex|claude|both`: Project rule target. `codex` updates `AGENTS.md`; `claude` updates `.claude/CLAUDE.md`; `both` updates both.
-- `--layout single|multi`: Handoff structure. `multi` is default; `single` preserves the legacy single-file layout.
-- `--session-prompts`: Create `AGENT_SESSION_PROMPTS.md` if missing.
-- `--gitignore`: Add local handoff files to `.gitignore` if missing.
-- `--allow-readonly`: Claude Code only. Merge safe read-only query permissions into `.claude/settings.json`.
-- `--install-hooks`: Claude Code only. Install event-aware advisory handoff hook script and merge missing hook entries into `.claude/settings.json`. Hooks always exit `0`, never block, never write handoff files, and only emit soft `hookSpecificOutput.additionalContext` or `systemMessage` reminders when needed.
-- `--skip-codex-rules`: Do not create or update `AGENTS.md`.
-- `--skip-claude-rules`: Do not create or update `.claude/CLAUDE.md`.
-- `--dry-run`: Show planned changes without writing files.
+- `--repo <path>`：目标仓库根目录。默认当前工作目录。
+- `--platform codex|claude|both`：项目规则目标。`codex` 更新 `AGENTS.md`；`claude` 更新 `.claude/CLAUDE.md`；`both` 同时更新两者。
+- `--layout single|multi`：接力结构。`multi` 是默认值；`single` 保留旧版单文件布局。
+- `--session-prompts`：如果缺失则创建 `AGENT_SESSION_PROMPTS.md`。
+- `--gitignore`：如果缺失，则把本地接力文件加入 `.gitignore`。
+- `--allow-readonly`：仅 Claude Code 使用。把安全的只读查询权限合并到 `.claude/settings.json`。
+- `--install-hooks`：仅 Claude Code 使用。安装事件感知提醒型接力 hook 脚本，并把缺失 hook 条目合并到 `.claude/settings.json`。Hook 始终以 `0` 退出，从不阻断，从不写接力文件，只在需要时输出软性的 `hookSpecificOutput.additionalContext` 或 `systemMessage` 提醒。
+- `--skip-codex-rules`：不创建或更新 `AGENTS.md`。
+- `--skip-claude-rules`：不创建或更新 `.claude/CLAUDE.md`。
+- `--dry-run`：只显示计划变更，不写入文件。
 
-After running the script, inspect the generated files and replace placeholder or `UNKNOWN` content with repository-based facts where possible.
+运行脚本后，检查生成的文件，并尽可能用仓库事实替换占位符或 `UNKNOWN` 内容。
 
-## Multi-Document Recovery Contract
+## 多文档恢复契约
 
-In `multi` layout, a new agent must recover in this order:
+在 `multi` 布局中，新 Agent 必须按以下顺序恢复：
 
 1. `AGENT_HANDOFF.md`
 2. `.agent-handoff/snapshot.md`
 3. `.agent-handoff/risks.md`
 4. `.agent-handoff/backlog.md`
-5. `.agent-handoff/validation.md` when validation state matters
-6. `.agent-handoff/decisions.md` when changing durable behavior or architecture
-7. `.agent-handoff/workspace.md` when orientation or commands are needed
-8. `.agent-handoff/work-log.md` when recent implementation details are needed
-9. `.agent-handoff/archive.md` only for old context
+5. 验证状态重要时读取 `.agent-handoff/validation.md`
+6. 修改持久行为或架构时读取 `.agent-handoff/decisions.md`
+7. 需要定位项目或命令时读取 `.agent-handoff/workspace.md`
+8. 需要近期实现细节时读取 `.agent-handoff/work-log.md`
+9. 仅为旧上下文读取 `.agent-handoff/archive.md`
 
-`snapshot.md` must stay short and action-oriented. Use the dedicated files for decisions, validation, backlog, risks, and history.
+`snapshot.md` 必须保持简短、面向行动。决策、验证、backlog、风险和历史应放入对应专用文件。
 
-## References
+## 引用资料
 
-Load only the references needed for the task:
+只加载当前任务需要的引用资料：
 
-- `references/templates.md`: Read when creating or manually repairing `AGENT_HANDOFF.md` or `AGENT_SESSION_PROMPTS.md`.
-- `references/codex-rules.md`: Read when creating or updating Codex `AGENTS.md`.
-- `references/claude-rules.md`: Read when creating or updating Claude Code `.claude/CLAUDE.md`.
-- `references/hooks.md`: Read only when the user asks for hook-based enforcement.
-- `references/quality.md`: Read when reviewing, compressing, repairing, or validating a handoff mechanism.
-- `templates/claude-settings-hooks.json`: Claude Code hook settings snippet for manual review or installation.
-- `templates/handoff-watch.mjs`: Claude Code event-aware advisory hook script template.
+- `references/templates.md`：创建或手动修复 `AGENT_HANDOFF.md` 或 `AGENT_SESSION_PROMPTS.md` 时读取。
+- `references/codex-rules.md`：创建或更新 Codex `AGENTS.md` 时读取。
+- `references/claude-rules.md`：创建或更新 Claude Code `.claude/CLAUDE.md` 时读取。
+- `references/hooks.md`：仅当用户要求基于 hook 的强制或提醒时读取。
+- `references/quality.md`：审查、压缩、修复或验证接力机制时读取。
+- `templates/claude-settings-hooks.json`：Claude Code hook settings 片段，用于手动审查或安装。
+- `templates/handoff-watch.mjs`：Claude Code 事件感知提醒 hook 脚本模板。
 
-## Closeout
+## 收尾
 
-When this skill changes repository files, report:
+当此 skill 修改仓库文件时，报告：
 
-- Files created or updated.
-- Current handoff status.
-- How the next agent should start.
-- Any remaining `UNKNOWN` entries, risks, or user confirmations needed.
+- 创建或更新的文件。
+- 当前接力状态。
+- 下一位 Agent 应该如何开始。
+- 任何剩余 `UNKNOWN` 条目、风险或需要用户确认的事项。

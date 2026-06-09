@@ -1,17 +1,17 @@
-# Agent Handoff Templates
+# Agent Handoff 模板
 
-Use these templates when creating or repairing repository-local handoff files. Replace placeholders with repository facts. Use `UNKNOWN` when a fact cannot be verified.
+创建或修复仓库本地 handoff 文件时使用这些模板。用仓库事实替换占位符。无法验证的事实使用 `UNKNOWN`。
 
-For project-level agent rules, use `references/codex-rules.md` for Codex `AGENTS.md` and `references/claude-rules.md` for Claude Code `.claude/CLAUDE.md`.
+对于项目级 agent 规则，Codex `AGENTS.md` 使用 `references/codex-rules.md`，Claude Code `.claude/CLAUDE.md` 使用 `references/claude-rules.md`。
 
-## Layouts
+## 布局
 
-- `multi`: recommended default for real projects. `AGENT_HANDOFF.md` is a short index and `.agent-handoff/*.md` stores state by category.
-- `single`: legacy compact layout for small projects. `AGENT_HANDOFF.md` stores all state.
+- `multi`: 真实项目的推荐默认布局。`AGENT_HANDOFF.md` 是简短索引，`.agent-handoff/*.md` 按类别存储状态。
+- `single`: 适用于小项目的旧版紧凑布局。`AGENT_HANDOFF.md` 存储全部状态。
 
-Do not force-migrate an existing `AGENT_HANDOFF.md`. Preserve it and migrate manually from repository facts when needed.
+不要强制迁移已有的 `AGENT_HANDOFF.md`。保留它，并在需要时基于仓库事实手动迁移。
 
-## Multi-Document Layout
+## 多文档布局
 
 ```text
 AGENT_HANDOFF.md
@@ -29,74 +29,74 @@ AGENT_HANDOFF.md
 ### AGENT_HANDOFF.md
 
 ```markdown
-# Agent Handoff Index
+# Agent Handoff 索引
 
-> Entry point for durable agent handoff memory in this repository.
-> Read this file first, then follow the Recovery Reading Order below.
+> 本仓库持久化 agent handoff 记忆的入口。
+> 先读取此文件，然后按下方恢复阅读顺序继续。
 
-## Maintenance Contract
+## 维护契约
 
-- Keep this file short. It is an index and recovery route, not a work log.
-- Store current task state in `.agent-handoff/snapshot.md`.
-- Store durable facts, decisions, validation, backlog, risks, and archives in the dedicated files listed below.
-- Keep all content factual and repository-based. Mark uncertainty as `UNKNOWN`.
-- Do not include secrets, credentials, long logs, full code blocks, or chat transcript dumps.
-- Before final response for any non-trivial task, update the relevant `.agent-handoff/` files.
+- 保持此文件简短。它是索引和恢复路径，不是工作日志。
+- 将当前任务状态存放在 `.agent-handoff/snapshot.md`。
+- 将持久化事实、决策、验证、积压、风险和归档存放在下列专用文件中。
+- 保持所有内容基于事实和仓库证据。将不确定内容标记为 `UNKNOWN`。
+- 不要包含密钥、凭据、长日志、完整代码块或聊天记录转储。
+- 对任何非平凡任务，在最终回复前更新相关 `.agent-handoff/` 文件。
 
-## Handoff Layout
+## Handoff 布局
 
-- `.agent-handoff/snapshot.md`: Current objective, status, next actions, active files, blockers, and open questions.
-- `.agent-handoff/workspace.md`: Repository map, entry points, test commands, docs, and stable project context.
-- `.agent-handoff/decisions.md`: Important decisions with reasons and evidence.
-- `.agent-handoff/work-log.md`: Recent operational work log.
-- `.agent-handoff/validation.md`: Validation commands/checks, results, and caveats.
-- `.agent-handoff/backlog.md`: Pending work and follow-ups.
-- `.agent-handoff/risks.md`: Risks, blockers, unknowns, and user/source confirmations needed.
-- `.agent-handoff/archive.md`: Compressed old history that is not part of normal startup.
+- `.agent-handoff/snapshot.md`: 当前目标、状态、下一步、活跃文件、阻塞项和待确认问题。
+- `.agent-handoff/workspace.md`: 仓库地图、入口点、测试命令、文档和稳定项目上下文。
+- `.agent-handoff/decisions.md`: 包含原因和证据的重要决策。
+- `.agent-handoff/work-log.md`: 近期操作工作日志。
+- `.agent-handoff/validation.md`: 验证命令/检查、结果和注意事项。
+- `.agent-handoff/backlog.md`: 待办工作和后续事项。
+- `.agent-handoff/risks.md`: 风险、阻塞项、未知项和所需的用户/来源确认。
+- `.agent-handoff/archive.md`: 压缩后的旧历史，不属于常规启动内容。
 
-## Recovery Reading Order
+## 恢复阅读顺序
 
-1. Read this file.
-2. Read `.agent-handoff/snapshot.md`.
-3. Read `.agent-handoff/risks.md`.
-4. Read `.agent-handoff/backlog.md`.
-5. Read `.agent-handoff/validation.md` only if validation state matters for the current task.
-6. Read `.agent-handoff/decisions.md` only when changing architecture, behavior, dependencies, or prior decisions.
-7. Read `.agent-handoff/workspace.md` only when orientation, commands, entry points, or subproject boundaries are needed.
-8. Read `.agent-handoff/work-log.md` only when recent implementation details are needed.
-9. Read `.agent-handoff/archive.md` only when explicitly needed for old context.
+1. 读取此文件。
+2. 读取 `.agent-handoff/snapshot.md`。
+3. 读取 `.agent-handoff/risks.md`。
+4. 读取 `.agent-handoff/backlog.md`。
+5. 仅当验证状态对当前任务重要时，读取 `.agent-handoff/validation.md`。
+6. 仅在变更架构、行为、依赖或既有决策时，读取 `.agent-handoff/decisions.md`。
+7. 仅在需要定位、命令、入口点或子项目边界时，读取 `.agent-handoff/workspace.md`。
+8. 仅在需要近期实现细节时，读取 `.agent-handoff/work-log.md`。
+9. 仅在明确需要旧上下文时，读取 `.agent-handoff/archive.md`。
 
-## Current Pointer
+## 当前指针
 
-- Last updated: YYYY-MM-DD
-- Workspace root: `<repo root>`
-- Current state file: `.agent-handoff/snapshot.md`
-- Primary next-action source: `.agent-handoff/snapshot.md`
-- Risk source: `.agent-handoff/risks.md`
-- Backlog source: `.agent-handoff/backlog.md`
+- 最后更新: YYYY-MM-DD
+- 工作区根目录: `<repo root>`
+- 当前状态文件: `.agent-handoff/snapshot.md`
+- 主要下一步来源: `.agent-handoff/snapshot.md`
+- 风险来源: `.agent-handoff/risks.md`
+- 积压来源: `.agent-handoff/backlog.md`
 ```
 
 ### .agent-handoff/snapshot.md
 
 ```markdown
-# Handoff Snapshot
+# Handoff 快照
 
-## Current State
+## 当前状态
 
-- Last updated: YYYY-MM-DD
-- Last agent: <agent/model/tool>
-- Workspace root: `<repo root>`
-- Current objective: <one sentence>
-- Current status: <not started | in progress | blocked | implemented | validated>
-- Immediate next actions:
+- 最后更新: YYYY-MM-DD
+- 上一个 agent: <agent/model/tool>
+- 工作区根目录: `<repo root>`
+- 当前目标: <one sentence>
+- 当前状态: <not started | in progress | blocked | implemented | validated>
+- 立即下一步:
   - <next concrete action>
-- Active files:
+- 活跃文件:
   - `<path>`
-- Blockers: <none or concrete blocker>
-- Open questions:
+- 阻塞项: <none or concrete blocker>
+- 待确认问题:
   - <none, UNKNOWN, or question needing user/source confirmation>
 
-## Recovery Summary
+## 恢复摘要
 
 - <one to three bullets with the most important context needed to resume>
 ```
@@ -104,29 +104,29 @@ AGENT_HANDOFF.md
 ### .agent-handoff/workspace.md
 
 ```markdown
-# Workspace Map
+# 工作区地图
 
-## Repository Structure
+## 仓库结构
 
 - `<path>`: <purpose>
 
-## Main Entry Points
+## 主要入口点
 
 - `<path>`
 
-## Test Entry Points
+## 测试入口点
 
 - `<command or path>`
 
-## Docs And Specs
+## 文档与规格
 
 - `<path>`
 
-## Durable Project Context
+## 持久化项目上下文
 
 - <Long-lived project fact verified from repository files or user input.>
 
-## Project Conventions
+## 项目约定
 
 - <Important convention>
 ```
@@ -134,9 +134,9 @@ AGENT_HANDOFF.md
 ### .agent-handoff/decisions.md
 
 ```markdown
-# Decision Log
+# 决策日志
 
-| Date | Decision | Reason | Evidence |
+| 日期 | 决策 | 原因 | 证据 |
 | --- | --- | --- | --- |
 | YYYY-MM-DD | <decision> | <why> | <file/user request/test/source> |
 ```
@@ -144,23 +144,23 @@ AGENT_HANDOFF.md
 ### .agent-handoff/work-log.md
 
 ```markdown
-# Current Work Log
+# 当前工作日志
 
 ## YYYY-MM-DD
 
-- Objective: <task>
-- Changed files:
+- 目标: <task>
+- 已变更文件:
   - `<path>`: <summary>
-- Result: <what is done>
-- Remaining risks: <none or concrete risk>
+- 结果: <what is done>
+- 剩余风险: <none or concrete risk>
 ```
 
 ### .agent-handoff/validation.md
 
 ```markdown
-# Validation History
+# 验证历史
 
-| Date | Command/Check | Result | Notes |
+| 日期 | 命令/检查 | 结果 | 备注 |
 | --- | --- | --- | --- |
 | YYYY-MM-DD | `<command or manual check>` | <passed | failed | not run> | <brief note> |
 ```
@@ -168,7 +168,7 @@ AGENT_HANDOFF.md
 ### .agent-handoff/backlog.md
 
 ```markdown
-# Task Backlog
+# 任务积压
 
 - [ ] <task or follow-up>
 ```
@@ -176,17 +176,17 @@ AGENT_HANDOFF.md
 ### .agent-handoff/risks.md
 
 ```markdown
-# Risks, Blockers, And Unknowns
+# 风险、阻塞项和未知项
 
-## Current Blockers
+## 当前阻塞项
 
 - <none or concrete blocker>
 
-## Current Risks
+## 当前风险
 
 - <none or concrete risk>
 
-## Unknowns / Confirmations Needed
+## 未知项/待确认项
 
 - UNKNOWN: <specific uncertainty and how to resolve it>
 ```
@@ -194,101 +194,101 @@ AGENT_HANDOFF.md
 ### .agent-handoff/archive.md
 
 ```markdown
-# Handoff Archive
+# Handoff 归档
 
-This file stores compressed old history that should not be part of normal startup.
+此文件保存压缩后的旧历史，不属于常规启动内容。
 ```
 
-## Single-Document Layout
+## 单文档布局
 
-Use only for small projects or when the user explicitly wants the legacy one-file structure.
+仅用于小项目，或用户明确要求旧版单文件结构时使用。
 
 ````markdown
 # Agent Handoff
 
-> This file is the durable memory for agents working in this repository.
-> A new agent should be able to read this file, inspect only the files needed for the current task, and continue without relying on previous chat history.
+> 此文件是本仓库中 agent 工作的持久化记忆。
+> 新的 agent 应能读取此文件，只检查当前任务所需文件，并在不依赖先前聊天历史的情况下继续工作。
 
-## Maintenance Contract
+## 维护契约
 
-- Read this file before planning or editing.
-- Update this file whenever task state, decisions, touched files, validation results, blockers, risks, or next actions change.
-- Keep it factual and compact. Prefer file paths, commands, and concrete outcomes.
-- Do not include secrets, credentials, long command logs, large code blocks, or chat transcript dumps.
-- Replace stale notes instead of accumulating contradictory history.
-- Mark uncertainty as `UNKNOWN` and resolve it from repository evidence when needed.
+- 规划或编辑前先读取此文件。
+- 当任务状态、决策、已触及文件、验证结果、阻塞项、风险或下一步行动变化时，更新此文件。
+- 保持内容事实化且紧凑。优先记录文件路径、命令和具体结果。
+- 不要包含密钥、凭据、长命令日志、大段代码块或聊天记录转储。
+- 替换过时记录，不要累积相互矛盾的历史。
+- 将不确定内容标记为 `UNKNOWN`，并在需要时根据仓库证据解决。
 
-## Handoff Snapshot
+## Handoff 快照
 
-- Last updated: YYYY-MM-DD
-- Last agent: <agent/model/tool>
-- Workspace root: `<repo root>`
-- Current objective: <one sentence describing the current task>
-- Current status: <not started | in progress | blocked | implemented | validated>
-- Immediate next actions:
+- 最后更新: YYYY-MM-DD
+- 上一个 agent: <agent/model/tool>
+- 工作区根目录: `<repo root>`
+- 当前目标: <one sentence describing the current task>
+- 当前状态: <not started | in progress | blocked | implemented | validated>
+- 立即下一步:
   - <next concrete action>
-- Active files:
+- 活跃文件:
   - `<path>`
-- Blockers: <none or concrete blocker>
-- Open questions:
+- 阻塞项: <none or concrete blocker>
+- 待确认问题:
   - <none, UNKNOWN, or question needing user/source confirmation>
 
-## Workspace Map
+## 工作区地图
 
 - `<path>`: <purpose>
-- Main entry points:
+- 主要入口点:
   - `<path>`
-- Test entry points:
+- 测试入口点:
   - `<command or path>`
-- Docs/specs:
+- 文档/规格:
   - `<path>`
 
-## Durable Project Context
+## 持久化项目上下文
 
 - <Long-lived project fact that future agents need.>
 
-## Operating Rules For Future Agents
+## 后续 Agent 操作规则
 
-- Start each session by relying on preloaded project rules if present, then reading this file explicitly.
-- Use this file as continuity memory, not as a replacement for reading source code.
-- Verify behavior from source files before changing implementation.
-- Keep edits scoped to the current task and existing project conventions.
-- Never revert unrelated user or agent changes.
-- Before final response, update this file with status, changed files, validation, risks, and next steps.
+- 每个会话开始时，如存在预加载项目规则则先依赖它们，然后显式读取此文件。
+- 将此文件用作连续性记忆，而不是源代码阅读的替代品。
+- 修改实现前，先从源文件验证行为。
+- 将编辑范围限制在当前任务和现有项目约定内。
+- 绝不回退无关的用户或 agent 变更。
+- 最终回复前，使用状态、已变更文件、验证、风险和下一步更新此文件。
 
-## Decision Log
+## 决策日志
 
-| Date | Decision | Reason | Evidence |
+| 日期 | 决策 | 原因 | 证据 |
 | --- | --- | --- | --- |
 | YYYY-MM-DD | <decision> | <why> | <file/user request/test/source> |
 
-## Current Work Log
+## 当前工作日志
 
 ### YYYY-MM-DD
 
-- Objective: <task>
-- Changed files:
+- 目标: <task>
+- 已变更文件:
   - `<path>`: <summary>
-- Result: <what is done>
-- Remaining risks: <none or concrete risk>
+- 结果: <what is done>
+- 剩余风险: <none or concrete risk>
 
-## Task Backlog
+## 任务积压
 
 - [ ] <task or follow-up>
 
-## Validation History
+## 验证历史
 
-| Date | Command/Check | Result | Notes |
+| 日期 | 命令/检查 | 结果 | 备注 |
 | --- | --- | --- | --- |
 | YYYY-MM-DD | `<command or manual check>` | <passed | failed | not run> | <brief note> |
 ````
 
 ## AGENT_SESSION_PROMPTS.md
 
-Use prompts that match the chosen layout. For multi-document layout, mention `AGENT_HANDOFF.md` plus `.agent-handoff/snapshot.md`, `.agent-handoff/risks.md`, and `.agent-handoff/backlog.md` as the required startup set.
+使用与所选布局匹配的 prompt。对于多文档布局，将 `AGENT_HANDOFF.md` 以及 `.agent-handoff/snapshot.md`、`.agent-handoff/risks.md`、`.agent-handoff/backlog.md` 说明为必读启动集合。
 
-For continuation prompts, include an explicit anti-noop guard so the agent does not treat "continue" as a no-response request:
+对于续接 prompt，加入明确的 anti-noop guard，避免 agent 将 `continue` 当作无需回复的请求：
 
 ```text
-Treat this as an explicit request to continue execution. Do not answer "No response requested." First state what you believe the previous step was, identify the next concrete action, then continue. If context is insufficient, recover from AGENT_HANDOFF.md and the required handoff files before acting.
+将此视为继续执行的明确请求。不要回答 "No response requested."。先说明你认为上一轮做到哪里，识别下一项具体行动，然后继续。如果上下文不足，请先从 AGENT_HANDOFF.md 和必需的 handoff 文件恢复，再行动。
 ```

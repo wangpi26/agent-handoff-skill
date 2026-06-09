@@ -1,14 +1,14 @@
 #!/usr/bin/env python3
-"""Bootstrap repository-local Agent handoff files.
+"""引导创建仓库本地 Agent handoff 文件。
 
-This script is intentionally conservative:
-- It creates handoff files only when missing.
-- It supports two layouts:
-  - single: legacy single-file AGENT_HANDOFF.md
-  - multi: AGENT_HANDOFF.md as an index plus .agent-handoff/*.md state files
-- It creates or updates a marked handoff protocol block in AGENTS.md for Codex.
-- It creates or updates a marked handoff protocol block in .claude/CLAUDE.md for Claude Code.
-- It does not overwrite existing handoff state.
+此脚本刻意保持保守:
+- 仅在 handoff 文件缺失时创建。
+- 支持两种布局:
+  - single: 旧版单文件 AGENT_HANDOFF.md
+  - multi: 以 AGENT_HANDOFF.md 作为索引，并使用 .agent-handoff/*.md 状态文件
+- 在 Codex 的 AGENTS.md 中创建或更新带标记的 handoff 协议块。
+- 在 Claude Code 的 .claude/CLAUDE.md 中创建或更新带标记的 handoff 协议块。
+- 不覆盖现有 handoff 状态。
 """
 
 from __future__ import annotations
@@ -49,235 +49,235 @@ def single_handoff_template(repo: Path) -> str:
     root = str(repo)
     return f"""# Agent Handoff
 
-> This file is the durable memory for agents working in this repository.
-> A new agent should be able to read this file, inspect only the files needed for the current task, and continue without relying on previous chat history.
+> 此文件是本仓库中 agent 工作的持久化记忆。
+> 新的 agent 应能读取此文件，只检查当前任务所需文件，并在不依赖先前聊天历史的情况下继续工作。
 
-## Maintenance Contract
+## 维护契约
 
-- Read this file before planning or editing.
-- Update this file whenever task state, decisions, touched files, validation results, blockers, risks, or next actions change.
-- Keep it factual and compact. Prefer file paths, commands, and concrete outcomes.
-- Do not include secrets, credentials, long command logs, large code blocks, or chat transcript dumps.
-- Replace stale notes instead of accumulating contradictory history.
-- Mark uncertainty as `UNKNOWN` and resolve it from repository evidence when needed.
+- 规划或编辑前先读取此文件。
+- 当任务状态、决策、已触及文件、验证结果、阻塞项、风险或下一步行动变化时，更新此文件。
+- 保持内容事实化且紧凑。优先记录文件路径、命令和具体结果。
+- 不要包含密钥、凭据、长命令日志、大段代码块或聊天记录转储。
+- 替换过时记录，不要累积相互矛盾的历史。
+- 将不确定内容标记为 `UNKNOWN`，并在需要时根据仓库证据解决。
 
-## Handoff Snapshot
+## Handoff 快照
 
-- Last updated: {today}
-- Last agent: Codex/Claude Code
-- Workspace root: `{root}`
-- Current objective: Establish durable Agent handoff mechanism for this repository.
-- Current status: initialized
-- Immediate next actions:
-  - Inspect repository-specific files and replace `UNKNOWN` entries with verified facts.
-- Active files:
+- 最后更新: {today}
+- 上一个 agent: Codex/Claude Code
+- 工作区根目录: `{root}`
+- 当前目标: 为此仓库建立持久化 Agent handoff 机制。
+- 当前状态: initialized
+- 立即下一步:
+  - 检查仓库特定文件，并用已验证事实替换 `UNKNOWN` 条目。
+- 活跃文件:
   - `AGENT_HANDOFF.md`
   - `AGENTS.md`
   - `.claude/CLAUDE.md`
-- Blockers: none
-- Open questions:
-  - Confirm whether handoff files should be committed or remain local-only.
+- 阻塞项: 无
+- 待确认问题:
+  - 确认 handoff 文件应提交还是仅保留在本地。
 
-## Workspace Map
+## 工作区地图
 
-- `.`: repository root.
-- Main entry points:
+- `.`: 仓库根目录。
+- 主要入口:
   - `UNKNOWN`
-- Test entry points:
+- 测试入口:
   - `UNKNOWN`
-- Docs/specs:
+- 文档/规格:
   - `UNKNOWN`
 
-## Durable Project Context
+## 持久化项目上下文
 
-- UNKNOWN: Populate with long-lived project facts verified from repository files or user input.
+- UNKNOWN: 填入从仓库文件或用户输入中验证过的长期项目事实。
 
-## Operating Rules For Future Agents
+## 后续 Agent 操作规则
 
-- Start each session by relying on preloaded project rules if present, then reading this file explicitly.
-- Use this file as continuity memory, not as a replacement for reading source code.
-- Verify behavior from source files before changing implementation.
-- Keep edits scoped to the current task and existing project conventions.
-- Do not modify generated dependency folders or unrelated files unless explicitly asked.
-- Never revert unrelated user or agent changes.
-- Before final response, update this file with status, changed files, validation, risks, and next steps.
+- 每个会话开始时，如存在预加载项目规则则先依赖它们，然后显式读取此文件。
+- 将此文件用作连续性记忆，而不是源代码阅读的替代品。
+- 修改实现前，先从源文件验证行为。
+- 将编辑范围限制在当前任务和现有项目约定内。
+- 除非明确要求，不要修改生成的依赖目录或无关文件。
+- 绝不回退无关的用户或 agent 变更。
+- 最终回复前，使用状态、已变更文件、验证、风险和下一步更新此文件。
 
-## Decision Log
+## 决策日志
 
-| Date | Decision | Reason | Evidence |
+| 日期 | 决策 | 原因 | 证据 |
 | --- | --- | --- | --- |
-| {today} | Use `AGENT_HANDOFF.md` as repository-local durable agent memory. | Preserve continuity across sessions and agents. | User request or bootstrap action. |
+| {today} | 使用 `AGENT_HANDOFF.md` 作为仓库本地持久化 agent 记忆。 | 保持跨会话和跨 agent 的连续性。 | 用户请求或引导创建动作。 |
 
-## Current Work Log
+## 当前工作日志
 
 ### {today}
 
-- Objective: Establish durable Agent handoff mechanism.
-- Changed files:
-  - `AGENT_HANDOFF.md`: Created initial durable handoff state.
-  - `AGENTS.md`: Created or updated Codex project-level handoff rules if enabled.
-  - `.claude/CLAUDE.md`: Created or updated Claude Code project-level handoff rules if enabled.
-- Result: Initial handoff mechanism scaffolded.
-- Remaining risks: Repository-specific context still contains `UNKNOWN` until source files are inspected.
+- 目标: 建立持久化 Agent handoff 机制。
+- 已变更文件:
+  - `AGENT_HANDOFF.md`: 已创建初始持久化 handoff 状态。
+  - `AGENTS.md`: 如已启用，已创建或更新 Codex 项目级 handoff 规则。
+  - `.claude/CLAUDE.md`: 如已启用，已创建或更新 Claude Code 项目级 handoff 规则。
+- 结果: 已搭建初始 handoff 机制。
+- 剩余风险: 在检查源文件前，仓库特定上下文仍包含 `UNKNOWN`。
 
-## Task Backlog
+## 任务积压
 
-- [ ] Replace `UNKNOWN` entries with verified repository facts.
-- [ ] Confirm whether handoff files should be committed or gitignored.
+- [ ] 用已验证仓库事实替换 `UNKNOWN` 条目。
+- [ ] 确认 handoff 文件应提交还是加入 gitignore。
 
-## Validation History
+## 验证历史
 
-| Date | Command/Check | Result | Notes |
+| 日期 | 命令/检查 | 结果 | 备注 |
 | --- | --- | --- | --- |
-| {today} | Bootstrap file creation | passed | Generated initial handoff scaffold; repository-specific facts still need review. |
+| {today} | 引导创建文件 | 通过 | 已生成初始 handoff 脚手架；仓库特定事实仍需复核。 |
 
-## Handoff Update Template
+## Handoff 更新模板
 
-Use this when ending a task or when the session may be interrupted:
+结束任务或会话可能中断时使用:
 
 ```markdown
-## Handoff Snapshot
+## Handoff 快照
 
-- Last updated: YYYY-MM-DD
-- Last agent: <agent/model/tool>
-- Workspace root: `<repo root>`
-- Current objective: <one sentence>
-- Current status: <not started | in progress | blocked | implemented | validated>
-- Immediate next actions:
+- 最后更新: YYYY-MM-DD
+- 上一个 agent: <agent/model/tool>
+- 工作区根目录: `<repo root>`
+- 当前目标: <one sentence>
+- 当前状态: <not started | in progress | blocked | implemented | validated>
+- 立即下一步:
   - <next concrete action>
-- Active files:
+- 活跃文件:
   - `<path>`
-- Blockers: <none or concrete blocker>
-- Open questions:
+- 阻塞项: <none or concrete blocker>
+- 待确认问题:
   - <none or question>
 ```
 
-Also update `Current Work Log`, `Decision Log`, `Validation History`, and `Task Backlog` when relevant.
+相关时，同时更新 `当前工作日志`、`决策日志`、`验证历史` 和 `任务积压`。
 """
 
 
 def multi_index_template(repo: Path) -> str:
     today = date.today().isoformat()
     root = str(repo)
-    return f"""# Agent Handoff Index
+    return f"""# Agent Handoff 索引
 
-> Entry point for durable agent handoff memory in this repository.
-> Read this file first, then follow the Recovery Reading Order below.
+> 本仓库持久化 agent handoff 记忆的入口。
+> 先读取此文件，然后按下方恢复阅读顺序继续。
 
-## Maintenance Contract
+## 维护契约
 
-- Keep this file short. It is an index and recovery route, not a work log.
-- Store current task state in `.agent-handoff/snapshot.md`.
-- Store durable facts, decisions, validation, backlog, risks, and archives in the dedicated files listed below.
-- Keep all content factual and repository-based. Mark uncertainty as `UNKNOWN`.
-- Do not include secrets, credentials, long logs, full code blocks, or chat transcript dumps.
-- Before final response for any non-trivial task, update the relevant `.agent-handoff/` files.
+- 保持此文件简短。它是索引和恢复路径，不是工作日志。
+- 将当前任务状态存放在 `.agent-handoff/snapshot.md`。
+- 将持久化事实、决策、验证、积压、风险和归档存放在下列专用文件中。
+- 保持所有内容基于事实和仓库证据。将不确定内容标记为 `UNKNOWN`。
+- 不要包含密钥、凭据、长日志、完整代码块或聊天记录转储。
+- 对任何非平凡任务，在最终回复前更新相关 `.agent-handoff/` 文件。
 
-## Handoff Layout
+## Handoff 布局
 
-- `.agent-handoff/snapshot.md`: Current objective, status, next actions, active files, blockers, and open questions.
-- `.agent-handoff/workspace.md`: Repository map, entry points, test commands, docs, and stable project context.
-- `.agent-handoff/decisions.md`: Important decisions with reasons and evidence.
-- `.agent-handoff/work-log.md`: Recent operational work log.
-- `.agent-handoff/validation.md`: Validation commands/checks, results, and caveats.
-- `.agent-handoff/backlog.md`: Pending work and follow-ups.
-- `.agent-handoff/risks.md`: Risks, blockers, unknowns, and user/source confirmations needed.
-- `.agent-handoff/archive.md`: Compressed old history that is not part of normal startup.
+- `.agent-handoff/snapshot.md`: 当前目标、状态、下一步、活跃文件、阻塞项和待确认问题。
+- `.agent-handoff/workspace.md`: 仓库地图、入口点、测试命令、文档和稳定项目上下文。
+- `.agent-handoff/decisions.md`: 包含原因和证据的重要决策。
+- `.agent-handoff/work-log.md`: 近期操作工作日志。
+- `.agent-handoff/validation.md`: 验证命令/检查、结果和注意事项。
+- `.agent-handoff/backlog.md`: 待办工作和后续事项。
+- `.agent-handoff/risks.md`: 风险、阻塞项、未知项和所需的用户/来源确认。
+- `.agent-handoff/archive.md`: 压缩后的旧历史，不属于常规启动内容。
 
-## Recovery Reading Order
+## 恢复阅读顺序
 
-1. Read this file.
-2. Read `.agent-handoff/snapshot.md`.
-3. Read `.agent-handoff/risks.md`.
-4. Read `.agent-handoff/backlog.md`.
-5. Read `.agent-handoff/validation.md` only if validation state matters for the current task.
-6. Read `.agent-handoff/decisions.md` only when changing architecture, behavior, dependencies, or prior decisions.
-7. Read `.agent-handoff/workspace.md` only when orientation, commands, entry points, or subproject boundaries are needed.
-8. Read `.agent-handoff/work-log.md` only when recent implementation details are needed.
-9. Read `.agent-handoff/archive.md` only when explicitly needed for old context.
+1. 读取此文件。
+2. 读取 `.agent-handoff/snapshot.md`。
+3. 读取 `.agent-handoff/risks.md`。
+4. 读取 `.agent-handoff/backlog.md`。
+5. 仅当验证状态对当前任务重要时，读取 `.agent-handoff/validation.md`。
+6. 仅在变更架构、行为、依赖或既有决策时，读取 `.agent-handoff/decisions.md`。
+7. 仅在需要定位、命令、入口点或子项目边界时，读取 `.agent-handoff/workspace.md`。
+8. 仅在需要近期实现细节时，读取 `.agent-handoff/work-log.md`。
+9. 仅在明确需要旧上下文时，读取 `.agent-handoff/archive.md`。
 
-## Current Pointer
+## 当前指针
 
-- Last updated: {today}
-- Workspace root: `{root}`
-- Current state file: `.agent-handoff/snapshot.md`
-- Primary next-action source: `.agent-handoff/snapshot.md`
-- Risk source: `.agent-handoff/risks.md`
-- Backlog source: `.agent-handoff/backlog.md`
+- 最后更新: {today}
+- 工作区根目录: `{root}`
+- 当前状态文件: `.agent-handoff/snapshot.md`
+- 主要下一步来源: `.agent-handoff/snapshot.md`
+- 风险来源: `.agent-handoff/risks.md`
+- 积压来源: `.agent-handoff/backlog.md`
 
-## Project Rule Targets
+## 项目规则目标
 
-- Codex project rules: `AGENTS.md`
-- Claude Code project rules: `.claude/CLAUDE.md`
+- Codex 项目规则: `AGENTS.md`
+- Claude Code 项目规则: `.claude/CLAUDE.md`
 
-## Closeout Rule
+## 收尾规则
 
-For non-trivial work, update the relevant files before final response:
+对非平凡工作，在最终回复前更新相关文件:
 
-- Always update `.agent-handoff/snapshot.md`.
-- Update `.agent-handoff/work-log.md` when files or task status changed.
-- Update `.agent-handoff/validation.md` when checks were run or intentionally skipped.
-- Update `.agent-handoff/decisions.md` when a durable decision was made.
-- Update `.agent-handoff/backlog.md` and `.agent-handoff/risks.md` when follow-ups, blockers, risks, or unknowns changed.
+- 始终更新 `.agent-handoff/snapshot.md`。
+- 当文件或任务状态变化时，更新 `.agent-handoff/work-log.md`。
+- 当运行检查或有意跳过检查时，更新 `.agent-handoff/validation.md`。
+- 当作出持久化决策时，更新 `.agent-handoff/decisions.md`。
+- 当后续事项、阻塞项、风险或未知项变化时，更新 `.agent-handoff/backlog.md` 和 `.agent-handoff/risks.md`。
 """
 
 
 def multi_snapshot_template(repo: Path) -> str:
     today = date.today().isoformat()
-    return f"""# Handoff Snapshot
+    return f"""# Handoff 快照
 
-## Current State
+## 当前状态
 
-- Last updated: {today}
-- Last agent: Codex/Claude Code
-- Workspace root: `{repo}`
-- Current objective: Establish durable multi-document Agent handoff mechanism for this repository.
-- Current status: initialized
-- Immediate next actions:
-  - Inspect repository-specific files and replace `UNKNOWN` entries with verified facts.
-- Active files:
+- 最后更新: {today}
+- 上一个 agent: Codex/Claude Code
+- 工作区根目录: `{repo}`
+- 当前目标: 为此仓库建立持久化多文档 Agent handoff 机制。
+- 当前状态: initialized
+- 立即下一步:
+  - 检查仓库特定文件，并用已验证事实替换 `UNKNOWN` 条目。
+- 活跃文件:
   - `AGENT_HANDOFF.md`
   - `.agent-handoff/snapshot.md`
   - `AGENTS.md`
   - `.claude/CLAUDE.md`
-- Blockers: none
-- Open questions:
-  - Confirm whether handoff files should be committed or remain local-only.
+- 阻塞项: 无
+- 待确认问题:
+  - 确认 handoff 文件应提交还是仅保留在本地。
 
-## Recovery Summary
+## 恢复摘要
 
-- Use `AGENT_HANDOFF.md` as the index.
-- Start here for the current objective and next action.
-- Do not treat this file as a replacement for source inspection.
+- 使用 `AGENT_HANDOFF.md` 作为索引。
+- 从这里了解当前目标和下一步行动。
+- 不要将此文件视为源代码检查的替代品。
 """
 
 
 def multi_workspace_template() -> str:
-    return """# Workspace Map
+    return """# 工作区地图
 
-## Repository Structure
+## 仓库结构
 
-- `.`: repository root.
-- `AGENT_HANDOFF.md`: handoff index and recovery route.
-- `.agent-handoff/`: durable handoff state files.
+- `.`: 仓库根目录。
+- `AGENT_HANDOFF.md`: handoff 索引和恢复路径。
+- `.agent-handoff/`: 持久化 handoff 状态文件。
 
-## Main Entry Points
-
-- `UNKNOWN`
-
-## Test Entry Points
+## 主要入口
 
 - `UNKNOWN`
 
-## Docs And Specs
+## 测试入口
 
 - `UNKNOWN`
 
-## Durable Project Context
+## 文档与规格
 
-- UNKNOWN: Populate with long-lived facts verified from repository files or user input.
+- `UNKNOWN`
 
-## Project Conventions
+## 持久化项目上下文
+
+- UNKNOWN: 填入从仓库文件或用户输入中验证过的长期事实。
+
+## 项目约定
 
 - UNKNOWN
 """
@@ -285,253 +285,253 @@ def multi_workspace_template() -> str:
 
 def multi_decisions_template() -> str:
     today = date.today().isoformat()
-    return f"""# Decision Log
+    return f"""# 决策日志
 
-| Date | Decision | Reason | Evidence |
+| 日期 | 决策 | 原因 | 证据 |
 | --- | --- | --- | --- |
-| {today} | Use multi-document Agent handoff memory. | Keep current state fast to read while preserving decisions, validation, backlog, and risks in dedicated files. | Bootstrap action. |
+| {today} | 使用多文档 Agent handoff 记忆。 | 保持当前状态快速可读，同时在专用文件中保留决策、验证、积压和风险。 | 引导创建动作。 |
 
-## Decision Guidelines
+## 决策指南
 
-- Record durable decisions only.
-- Include reason and evidence.
-- Do not record guesses as decisions.
-- If evidence is missing, mark it as `UNKNOWN`.
+- 只记录持久化决策。
+- 包含原因和证据。
+- 不要将猜测记录为决策。
+- 如果缺少证据，标记为 `UNKNOWN`。
 """
 
 
 def multi_work_log_template() -> str:
     today = date.today().isoformat()
-    return f"""# Current Work Log
+    return f"""# 当前工作日志
 
 ## {today}
 
-- Objective: Establish durable multi-document Agent handoff mechanism.
-- Changed files:
-  - `AGENT_HANDOFF.md`: Created handoff index.
-  - `.agent-handoff/`: Created structured handoff state files.
-  - `AGENTS.md`: Created or updated Codex project-level handoff rules if enabled.
-  - `.claude/CLAUDE.md`: Created or updated Claude Code project-level handoff rules if enabled.
-- Result: Initial multi-document handoff mechanism scaffolded.
-- Remaining risks: Repository-specific context still contains `UNKNOWN` until source files are inspected.
+- 目标: 建立持久化多文档 Agent handoff 机制。
+- 已变更文件:
+  - `AGENT_HANDOFF.md`: 已创建 handoff 索引。
+  - `.agent-handoff/`: 已创建结构化 handoff 状态文件。
+  - `AGENTS.md`: 如已启用，已创建或更新 Codex 项目级 handoff 规则。
+  - `.claude/CLAUDE.md`: 如已启用，已创建或更新 Claude Code 项目级 handoff 规则。
+- 结果: 已搭建初始多文档 handoff 机制。
+- 剩余风险: 在检查源文件前，仓库特定上下文仍包含 `UNKNOWN`。
 
-## Work Log Guidelines
+## 工作日志指南
 
-- Keep only recent, still-operationally-useful work here.
-- Move stale or long history to `archive.md` as a compressed summary.
-- Prefer file paths and concrete outcomes over prose summaries.
+- 这里只保留近期且仍有操作价值的工作。
+- 将过时或较长历史作为压缩摘要移至 `archive.md`。
+- 优先记录文件路径和具体结果，而不是散文式摘要。
 """
 
 
 def multi_validation_template() -> str:
     today = date.today().isoformat()
-    return f"""# Validation History
+    return f"""# 验证历史
 
-| Date | Command/Check | Result | Notes |
+| 日期 | 命令/检查 | 结果 | 备注 |
 | --- | --- | --- | --- |
-| {today} | Bootstrap file creation | passed | Generated initial multi-document handoff scaffold; repository-specific facts still need review. |
+| {today} | 引导创建文件 | 通过 | 已生成初始多文档 handoff 脚手架；仓库特定事实仍需复核。 |
 
-## Validation Guidelines
+## 验证指南
 
-- Record commands/checks that were run.
-- Record failed checks with concise cause and next action.
-- Record checks that were intentionally not run as `not run`, with the reason.
-- Do not paste long logs; summarize and reference files when needed.
+- 记录已运行的命令/检查。
+- 记录失败检查的简要原因和下一步行动。
+- 对有意未运行的检查记录为 `not run`，并说明原因。
+- 不要粘贴长日志；需要时总结并引用文件。
 """
 
 
 def multi_backlog_template() -> str:
-    return """# Task Backlog
+    return """# 任务积压
 
-- [ ] Replace `UNKNOWN` entries with verified repository facts.
-- [ ] Confirm whether handoff files should be committed or gitignored.
+- [ ] 用已验证仓库事实替换 `UNKNOWN` 条目。
+- [ ] 确认 handoff 文件应提交还是加入 gitignore。
 
-## Backlog Guidelines
+## 积压指南
 
-- Keep tasks actionable.
-- Remove completed or obsolete items.
-- Link items to risks, decisions, or files when useful.
+- 保持任务可执行。
+- 移除已完成或过时事项。
+- 有用时，将事项关联到风险、决策或文件。
 """
 
 
 def multi_risks_template() -> str:
-    return """# Risks, Blockers, And Unknowns
+    return """# 风险、阻塞项与未知项
 
-## Current Blockers
+## 当前阻塞项
 
-- none
+- 无
 
-## Current Risks
+## 当前风险
 
-- Repository-specific facts are still `UNKNOWN` until source files are inspected.
+- 在检查源文件前，仓库特定事实仍为 `UNKNOWN`。
 
-## Unknowns / Confirmations Needed
+## 未知项 / 需要确认
 
-- UNKNOWN: Whether handoff files should be committed or remain local-only.
+- UNKNOWN: handoff 文件应提交还是仅保留在本地。
 
-## Risk Guidelines
+## 风险指南
 
-- Keep risks concrete.
-- Mark uncertainty as `UNKNOWN`.
-- Include the source needed to resolve each unknown when possible.
+- 保持风险具体。
+- 将不确定内容标记为 `UNKNOWN`。
+- 尽可能包含解决每个未知项所需的来源。
 """
 
 
 def multi_archive_template() -> str:
-    return """# Handoff Archive
+    return """# Handoff 归档
 
-This file stores compressed old history that should not be part of normal startup.
+此文件存放压缩后的旧历史，不应成为常规启动内容。
 
-## Archive Guidelines
+## 归档指南
 
-- Do not use this file for current state.
-- Move stale but potentially useful history here as concise summaries.
-- Keep pointers to relevant decisions, validation entries, or source files.
+- 不要使用此文件记录当前状态。
+- 将过时但可能有用的历史作为简洁摘要移至此处。
+- 保留指向相关决策、验证条目或源文件的指针。
 """
 
 
 def common_rule_body(layout: str) -> str:
     if layout == "multi":
-        startup = """Before making a plan or editing files, read:
+        startup = """制定计划或编辑文件前，读取:
 
 1. `AGENT_HANDOFF.md`
 2. `.agent-handoff/snapshot.md`
 3. `.agent-handoff/risks.md`
 4. `.agent-handoff/backlog.md`
-5. Additional `.agent-handoff/` files only when needed by the current task, following the Recovery Reading Order in `AGENT_HANDOFF.md`
-6. The source files directly relevant to the user's current request
+5. 仅在当前任务需要时，根据 `AGENT_HANDOFF.md` 中的恢复阅读顺序读取其他 `.agent-handoff/` 文件
+6. 与用户当前请求直接相关的源文件
 
-Use the handoff files as continuity memory, but verify implementation details from source files before changing behavior."""
-        memory = """The repository uses multi-document durable handoff memory:
+将 handoff 文件作为连续性记忆，但在改变行为前从源文件验证实现细节。"""
+        memory = """此仓库使用多文档持久化 handoff 记忆:
 
-- `AGENT_HANDOFF.md`: index and recovery route
-- `.agent-handoff/snapshot.md`: current objective, status, next actions, active files, blockers, and open questions
-- `.agent-handoff/workspace.md`: repository map, entry points, commands, and stable context
-- `.agent-handoff/decisions.md`: durable decisions with reasons and evidence
-- `.agent-handoff/work-log.md`: recent operational work
-- `.agent-handoff/validation.md`: validation commands/checks and results
-- `.agent-handoff/backlog.md`: pending work
-- `.agent-handoff/risks.md`: risks, blockers, unknowns, and confirmations
-- `.agent-handoff/archive.md`: compressed old history
+- `AGENT_HANDOFF.md`: 索引和恢复路径
+- `.agent-handoff/snapshot.md`: 当前目标、状态、下一步、活跃文件、阻塞项和待确认问题
+- `.agent-handoff/workspace.md`: 仓库地图、入口点、命令和稳定上下文
+- `.agent-handoff/decisions.md`: 包含原因和证据的持久化决策
+- `.agent-handoff/work-log.md`: 近期操作工作
+- `.agent-handoff/validation.md`: 验证命令/检查及结果
+- `.agent-handoff/backlog.md`: 待办工作
+- `.agent-handoff/risks.md`: 风险、阻塞项、未知项和确认项
+- `.agent-handoff/archive.md`: 压缩旧历史
 
-Maintain the smallest relevant file. Do not put all state into `AGENT_HANDOFF.md`; it is an index."""
-        size = """- Keep `AGENT_HANDOFF.md` short; it is an index.
-- Keep `.agent-handoff/snapshot.md` short, current, and action-oriented.
-- Keep only recent, still-relevant work in `.agent-handoff/work-log.md`.
-- Prefer updating existing bullets over appending duplicate or contradictory notes.
-- Move stale long history to `.agent-handoff/archive.md`.
-- In an ongoing uninterrupted chat, reread only relevant handoff files after compaction, resume, uncertainty, or task changes."""
-        closeout = """Before any final response for a non-trivial task, update the relevant handoff files without waiting for the user to ask.
+维护最小的相关文件。不要将所有状态放入 `AGENT_HANDOFF.md`; 它是索引。"""
+        size = """- 保持 `AGENT_HANDOFF.md` 简短；它是索引。
+- 保持 `.agent-handoff/snapshot.md` 简短、当前且面向行动。
+- 在 `.agent-handoff/work-log.md` 中只保留近期且仍相关的工作。
+- 优先更新现有条目，而不是追加重复或矛盾记录。
+- 将过时长历史移至 `.agent-handoff/archive.md`。
+- 在持续未中断的聊天中，仅在压缩、恢复、不确定或任务变化后重读相关 handoff 文件。"""
+        closeout = """对非平凡任务，在任何最终回复前更新相关 handoff 文件，不要等待用户要求。
 
-Minimum required updates:
+最低必需更新:
 
-- Refresh `.agent-handoff/snapshot.md` with current objective, status, next actions, active files, blockers, and open questions.
-- Add or update `.agent-handoff/work-log.md` when files or task status changed.
-- Add `.agent-handoff/validation.md` entries for commands/checks run or intentionally not run.
-- Record durable decisions in `.agent-handoff/decisions.md`.
-- Update `.agent-handoff/backlog.md` and `.agent-handoff/risks.md` when follow-ups, blockers, risks, or unknowns changed.
-- Remove or rewrite stale state that would mislead the next agent.
+- 用当前目标、状态、下一步、活跃文件、阻塞项和待确认问题刷新 `.agent-handoff/snapshot.md`。
+- 当文件或任务状态变化时，添加或更新 `.agent-handoff/work-log.md`。
+- 为已运行或有意未运行的命令/检查添加 `.agent-handoff/validation.md` 条目。
+- 在 `.agent-handoff/decisions.md` 中记录持久化决策。
+- 当后续事项、阻塞项、风险或未知项变化时，更新 `.agent-handoff/backlog.md` 和 `.agent-handoff/risks.md`。
+- 移除或重写会误导下一个 agent 的过时状态。
 
-If the task was purely conversational and no project state changed, no file update is required."""
-        checklist = "Before final response, update the relevant `.agent-handoff/` files with final task status, files changed, commands/checks run and outcomes, and remaining risks, blockers, open questions, or next steps."
+如果任务只是对话且项目状态没有变化，则不需要更新文件。"""
+        checklist = "最终回复前，用最终任务状态、已变更文件、已运行命令/检查及结果、剩余风险、阻塞项、待确认问题或下一步，更新相关 `.agent-handoff/` 文件。"
     else:
-        startup = """Before making a plan or editing files, read:
+        startup = """制定计划或编辑文件前，读取:
 
 1. `AGENT_HANDOFF.md`
-2. Any task-specific docs referenced by `AGENT_HANDOFF.md`
-3. The source files directly relevant to the user's current request
+2. `AGENT_HANDOFF.md` 引用的任何任务特定文档
+3. 与用户当前请求直接相关的源文件
 
-Use `AGENT_HANDOFF.md` as continuity memory, but verify implementation details from source files before changing behavior."""
-        memory = """`AGENT_HANDOFF.md` is the durable cross-session memory for this repository. Maintain it during every meaningful task.
+将 `AGENT_HANDOFF.md` 作为连续性记忆，但在改变行为前从源文件验证实现细节。"""
+        memory = """`AGENT_HANDOFF.md` 是此仓库的跨会话持久化记忆。每个有意义的任务期间都要维护它。
 
-Update it whenever any of these change:
+当以下任一内容变化时更新它:
 
-- Current objective or status
-- Active files
-- Important decisions
-- Files changed
-- Validation commands and results
-- Blockers, risks, open questions, or follow-up work
+- 当前目标或状态
+- 活跃文件
+- 重要决策
+- 已变更文件
+- 验证命令和结果
+- 阻塞项、风险、待确认问题或后续工作
 
-Keep updates concise and evidence-based. Do not paste secrets, credentials, long logs, large code blocks, or chat transcript dumps. Replace stale information instead of adding contradictory notes."""
-        size = """- Keep `Handoff Snapshot` short, current, and action-oriented.
-- Keep only recent, still-relevant work in `Current Work Log`.
-- Prefer updating existing bullets over appending duplicate or contradictory notes.
-- In an ongoing uninterrupted chat, reread only relevant sections after compaction, resume, uncertainty, or task changes."""
-        closeout = """Before any final response for a non-trivial task, update `AGENT_HANDOFF.md` without waiting for the user to ask.
+保持更新简洁且基于证据。不要粘贴密钥、凭据、长日志、大段代码块或聊天记录转储。替换过时信息，不要添加矛盾记录。"""
+        size = """- 保持 `Handoff 快照` 简短、当前且面向行动。
+- 在 `当前工作日志` 中只保留近期且仍相关的工作。
+- 优先更新现有条目，而不是追加重复或矛盾记录。
+- 在持续未中断的聊天中，仅在压缩、恢复、不确定或任务变化后重读相关章节。"""
+        closeout = """对非平凡任务，在任何最终回复前更新 `AGENT_HANDOFF.md`，不要等待用户要求。
 
-Minimum required updates:
+最低必需更新:
 
-- Refresh `Handoff Snapshot` with current objective, status, next actions, active files, and blockers.
-- Add or update `Current Work Log` for the task.
-- Add `Validation History` entries for commands or manual checks that were run.
-- Record remaining risks, open questions, or follow-up work.
-- Remove or rewrite stale state that would mislead the next agent.
+- 用当前目标、状态、下一步、活跃文件和阻塞项刷新 `Handoff 快照`。
+- 为该任务添加或更新 `当前工作日志`。
+- 为已运行的命令或人工检查添加 `验证历史` 条目。
+- 记录剩余风险、待确认问题或后续工作。
+- 移除或重写会误导下一个 agent 的过时状态。
 
-If the task was purely conversational and no project state changed, no file update is required."""
-        checklist = "Before final response, update `AGENT_HANDOFF.md` with final task status, files changed, commands/checks run and outcomes, and remaining risks, blockers, open questions, or next steps."
+如果任务只是对话且项目状态没有变化，则不需要更新文件。"""
+        checklist = "最终回复前，用最终任务状态、已变更文件、已运行命令/检查及结果、剩余风险、阻塞项、待确认问题或下一步更新 `AGENT_HANDOFF.md`。"
 
-    return f"""## Required Startup Routine
+    return f"""## 必需启动流程
 
 {startup}
 
-## Default Implementation Standard
+## 默认实现标准
 
-For non-trivial development work, target production/commercial-grade quality by default rather than minimum viable implementation. Prefer robust, maintainable solutions with appropriate validation, runtime and edge-case consideration, and clear reporting of what was and was not tested. Keep scope aligned with the user's request; do not add unrelated features or speculative abstractions.
+对非平凡开发工作，默认以生产级/商业级质量为目标，而不是最低可用实现。优先选择稳健、可维护的方案，并进行适当验证，考虑运行时和边界情况，清楚报告已测试和未测试内容。保持范围与用户请求一致；不要添加无关功能或投机性抽象。
 
-## Stable File Reading Protocol
+## 稳定文件读取协议
 
-To avoid Read tool line-number or offset drift:
+为避免 Read 工具行号或 offset 漂移:
 
-1. Prefer dedicated search/read tools for ordinary file lookup, content search, and file reads.
-2. Confirm file size before reading large or volatile files, using line counts or targeted searches when needed.
-3. Search for exact targets first, then read small exact ranges around those targets.
-4. Keep Read ranges no larger than 240 lines unless the file is known to be small.
-5. If Read returns unexpected empty output, offset warnings, stale snippets, inconsistent line numbers, `file is shorter than the provided offset`, or an API termination after a Read attempt, stop paging with Read for that file immediately.
-6. Treat Read `offset` as a line number, not a character offset. Never retry the same out-of-range offset, and never guess by adding zeros or using large approximate offsets. If the tool reports the file has N lines, all follow-up Read offsets for that file must be within `0..N`.
-7. Recover from Read offset failure by re-anchoring with a targeted `Grep` for the section/title/symbol, or by reading a small known-valid range such as offset `0`; only then read a small range around the confirmed line number.
-8. When Read becomes unreliable, use shell verification commands such as `wc -l`, `rg -n`, and `sed -n '<start>,<end>p'` with quoted paths; keep ranges small and record that fallback in validation notes when relevant.
-9. Treat read-only shell inspection commands (`wc`, `rg`, `grep`, `sed -n`, `ls`, `pwd`, and non-mutating `git status`/`git diff`/`git log`/`git ls-files`) as safe query operations. They should be pre-approved in project settings where possible so source verification does not require repeated manual approval.
-10. Do not propose or edit code based on uncertain offsets; re-anchor with search results first.
+1. 普通文件查找、内容搜索和文件读取优先使用专用 search/read 工具。
+2. 读取大型或易变文件前确认文件大小，必要时使用行数或定向搜索。
+3. 先搜索精确目标，再读取目标周围的小范围精确内容。
+4. 除非确认文件很小，否则 Read 范围不超过 240 行。
+5. 如果 Read 返回意外空输出、offset 警告、过时片段、行号不一致、`file is shorter than the provided offset`，或 Read 尝试后 API 终止，立即停止对该文件继续分页 Read。
+6. 将 Read `offset` 视为行号，而不是字符 offset。绝不重试同一个越界 offset，也不要通过补零或使用大致的大 offset 猜测。如果工具报告文件有 N 行，该文件后续所有 Read offset 必须在 `0..N` 内。
+7. 从 Read offset 失败恢复时，使用针对章节/标题/符号的定向 `Grep` 重新锚定，或读取如 offset `0` 这样的已知有效小范围；然后再读取已确认行号周围的小范围。
+8. 当 Read 变得不可靠时，使用带引号路径的 shell 验证命令，如 `wc -l`、`rg -n` 和 `sed -n '<start>,<end>p'`; 保持范围较小，并在相关时将该兜底方式记录到验证备注中。
+9. 将只读 shell 检查命令（`wc`、`rg`、`grep`、`sed -n`、`ls`、`pwd`，以及不变更状态的 `git status`/`git diff`/`git log`/`git ls-files`）视为安全查询操作。应尽可能在项目 settings 中预批准它们，让源代码验证不需要反复人工批准。
+10. 不要基于不确定 offset 提议或编辑代码；先用搜索结果重新锚定。
 
-## Continuation Recovery Guard
+## 继续恢复保护
 
-If the user says `continue`, `继续`, `Continue from where you left off.`, or any equivalent continuation request, treat it as an explicit instruction to resume the task. Do not answer `No response requested.` and do not stop silently. First state the last known objective and next concrete action, then continue. If context is insufficient, recover from the handoff files and task-relevant source files before acting.
+如果用户说 `continue`、`继续`、`Continue from where you left off.` 或任何等效的继续请求，将其视为恢复任务的明确指令。不要回答 `No response requested.`，也不要静默停止。先说明最后已知目标和下一项具体行动，然后继续。如果上下文不足，先从 handoff 文件和任务相关源文件恢复，再行动。
 
-## Durable Handoff Memory
+## 持久化 Handoff 记忆
 
 {memory}
 
-## Handoff Size Discipline
+## Handoff 大小纪律
 
 {size}
 
-## Mandatory Closeout Protocol
+## 强制收尾协议
 
 {closeout}
 
-## Work Discipline
+## 工作纪律
 
-- Do not assume which subproject is active. Infer it from the user request, handoff files, and repository evidence.
-- Prefer existing project conventions over new abstractions.
-- Read files before editing them.
-- Keep edits scoped to the task.
-- Do not modify generated dependency folders unless explicitly asked.
-- Never revert unrelated user or agent changes.
-- Record validation honestly. If tests or checks were not run, say so in handoff files and in the final response.
+- 不要假设哪个子项目处于活跃状态。根据用户请求、handoff 文件和仓库证据推断。
+- 优先采用现有项目约定，而不是新抽象。
+- 编辑文件前先读取。
+- 将编辑范围限制在任务内。
+- 除非明确要求，不要修改生成的依赖目录。
+- 绝不回退无关的用户或 agent 变更。
+- 诚实记录验证。如果测试或检查未运行，在 handoff 文件和最终回复中说明。
 
-## Session Closeout Checklist
+## 会话收尾清单
 
 {checklist}"""
 
 
 def rule_block(platform: str, layout: str) -> str:
-    title = "Codex Agent Handoff Protocol" if platform == "codex" else "Claude Code Agent Handoff Protocol"
+    title = "Codex Agent Handoff 协议" if platform == "codex" else "Claude Code Agent Handoff 协议"
     layout_label = "multi-document" if layout == "multi" else "single-document"
     return f"""{START}
 # {title}
 
-Layout: {layout_label}
+布局: {layout_label}
 
 {common_rule_body(layout)}
 {END}
@@ -540,68 +540,68 @@ Layout: {layout_label}
 
 def session_prompts(layout: str) -> str:
     if layout == "multi":
-        return """# Agent Session Prompts
+        return """# Agent 会话提示
 
-## New Window Startup
+## 新窗口启动
 
 ```text
-Confirm project rules are loaded, then read AGENT_HANDOFF.md and follow its Recovery Reading Order. At minimum read .agent-handoff/snapshot.md, .agent-handoff/risks.md, and .agent-handoff/backlog.md before planning.
+确认项目规则已加载，然后读取 AGENT_HANDOFF.md 并遵循其中的恢复阅读顺序。规划前至少读取 .agent-handoff/snapshot.md、.agent-handoff/risks.md 和 .agent-handoff/backlog.md。
 
-Recover the current objective, status, immediate next action, active files, blockers, validation caveats, and source files that need inspection. Read only task-relevant files after that. During the task, update the smallest relevant .agent-handoff file whenever objective, decisions, changed files, validation, risks, blockers, or next steps change. Complete handoff closeout before the final response.
+恢复当前目标、状态、立即下一步、活跃文件、阻塞项、验证注意事项以及需要检查的源文件。之后只读取与任务相关的文件。任务期间，每当目标、决策、已变更文件、验证、风险、阻塞项或下一步变化时，更新最小相关的 .agent-handoff 文件。最终回复前完成 handoff 收尾。
 ```
 
-## Continue Specific Task
+## 继续特定任务
 
 ```text
-Continue this task: <specific task>.
+继续此任务: <specific task>。
 
-Treat this as an explicit request to continue execution. Do not answer "No response requested." First state what you believe the previous step was, identify the next concrete action, then continue. If context is insufficient, recover from AGENT_HANDOFF.md and the required .agent-handoff files before acting.
+将其视为继续执行的明确请求。不要回答 "No response requested." 先说明你认为上一步是什么，识别下一项具体行动，然后继续。如果上下文不足，行动前先从 AGENT_HANDOFF.md 和必需的 .agent-handoff 文件恢复。
 
-Start by reading AGENT_HANDOFF.md, then .agent-handoff/snapshot.md, .agent-handoff/risks.md, and .agent-handoff/backlog.md. Inspect task-relevant source files. Maintain the multi-document handoff: update snapshot at the start, decisions when durable choices are made, work-log when files change, validation when checks run or are skipped, and risks/backlog when follow-ups or unknowns change.
+先读取 AGENT_HANDOFF.md，然后读取 .agent-handoff/snapshot.md、.agent-handoff/risks.md 和 .agent-handoff/backlog.md。检查任务相关源文件。维护多文档 handoff: 开始时更新 snapshot，作出持久化选择时更新 decisions，文件变化时更新 work-log，运行或跳过检查时更新 validation，后续事项或未知项变化时更新 risks/backlog。
 ```
 
-## Closeout
+## 收尾
 
 ```text
-Before ending this turn, update the multi-document handoff: refresh .agent-handoff/snapshot.md, update .agent-handoff/work-log.md, record .agent-handoff/validation.md, update .agent-handoff/backlog.md and .agent-handoff/risks.md, and remove or rewrite stale state. Then report what changed, what was validated, and what remains.
+结束本轮前，更新多文档 handoff: 刷新 .agent-handoff/snapshot.md，更新 .agent-handoff/work-log.md，记录 .agent-handoff/validation.md，更新 .agent-handoff/backlog.md 和 .agent-handoff/risks.md，并移除或重写过时状态。然后报告变更内容、验证内容和剩余事项。
 ```
 
-## Handoff Quality Review
+## Handoff 质量审查
 
 ```text
-Review and directly repair the multi-document handoff so a new agent can take over. Check that AGENT_HANDOFF.md is only an index, snapshot is current and short, next actions are concrete, paths are locatable, decisions have reasons and evidence, validation is recorded, and stale, contradictory, speculative, or chat-transcript content is removed.
+审查并直接修复多文档 handoff，让新的 agent 可以接手。检查 AGENT_HANDOFF.md 是否仅作为索引，snapshot 是否当前且简短，下一步是否具体，路径是否可定位，决策是否有原因和证据，验证是否已记录，以及过时、矛盾、推测性或聊天记录内容是否已移除。
 ```
 """
-    return """# Agent Session Prompts
+    return """# Agent 会话提示
 
-## New Window Startup
+## 新窗口启动
 
 ```text
-Confirm project rules are loaded, then explicitly read AGENT_HANDOFF.md. Treat it as durable project state, not as chat history.
+确认项目规则已加载，然后显式读取 AGENT_HANDOFF.md。将其视为持久化项目状态，而不是聊天历史。
 
-Recover the current objective, status, immediate next action, active files, blockers, and source files that need inspection. Read only task-relevant files after that. During the task, update AGENT_HANDOFF.md whenever objective, decisions, changed files, validation, risks, blockers, or next steps change. Complete handoff closeout before the final response.
+恢复当前目标、状态、立即下一步、活跃文件、阻塞项以及需要检查的源文件。之后只读取任务相关文件。任务期间，每当目标、决策、已变更文件、验证、风险、阻塞项或下一步变化时，更新 AGENT_HANDOFF.md。最终回复前完成 handoff 收尾。
 ```
 
-## Continue Specific Task
+## 继续特定任务
 
 ```text
-Continue this task: <specific task>.
+继续此任务: <specific task>。
 
-Treat this as an explicit request to continue execution. Do not answer "No response requested." First state what you believe the previous step was, identify the next concrete action, then continue. If context is insufficient, recover from AGENT_HANDOFF.md before acting.
+将其视为继续执行的明确请求。不要回答 "No response requested." 先说明你认为上一步是什么，识别下一项具体行动，然后继续。如果上下文不足，行动前先从 AGENT_HANDOFF.md 恢复。
 
-Start by confirming project rules are loaded and reading AGENT_HANDOFF.md, then inspect task-relevant source files. Maintain AGENT_HANDOFF.md during the task: update objective and active files at the start, record decisions with reasons, record changed files, record validation commands and results, and update final status, risks, blockers, and next steps before closing.
+先确认项目规则已加载并读取 AGENT_HANDOFF.md，然后检查任务相关源文件。任务期间维护 AGENT_HANDOFF.md: 开始时更新目标和活跃文件，记录带原因的决策，记录已变更文件，记录验证命令和结果，并在结束前更新最终状态、风险、阻塞项和下一步。
 ```
 
-## Closeout
+## 收尾
 
 ```text
-Before ending this turn, update AGENT_HANDOFF.md: refresh Handoff Snapshot, update Current Work Log, record Validation History, update Task Backlog, and remove or rewrite stale state. Then report what changed, what was validated, and what remains.
+结束本轮前，更新 AGENT_HANDOFF.md: 刷新 Handoff 快照，更新当前工作日志，记录验证历史，更新任务积压，并移除或重写过时状态。然后报告变更内容、验证内容和剩余事项。
 ```
 
-## Handoff Quality Review
+## Handoff 质量审查
 
 ```text
-Review and directly repair AGENT_HANDOFF.md so a new agent can take over. Check that the objective is current, next actions are concrete, paths are locatable, decisions have reasons and evidence, validation is recorded, and stale, contradictory, speculative, or chat-transcript content is removed.
+审查并直接修复 AGENT_HANDOFF.md，让新的 agent 可以接手。检查目标是否当前，下一步是否具体，路径是否可定位，决策是否有原因和证据，验证是否已记录，以及过时、矛盾、推测性或聊天记录内容是否已移除。
 ```
 """
 
@@ -609,7 +609,7 @@ Review and directly repair AGENT_HANDOFF.md so a new agent can take over. Check 
 def skill_template_text(relative_path: str) -> str:
     path = Path(__file__).resolve().parent.parent / relative_path
     if not path.exists():
-        raise SystemExit(f"Missing skill template: {path}")
+        raise SystemExit(f"缺少 skill 模板: {path}")
     return path.read_text(encoding="utf-8").replace("\r\n", "\n")
 
 
@@ -620,7 +620,7 @@ def hook_script_template() -> str:
 def hook_settings_template() -> dict:
     data = json.loads(skill_template_text("templates/claude-settings-hooks.json"))
     if not isinstance(data, dict) or not isinstance(data.get("hooks"), dict):
-        raise SystemExit("Invalid hook settings template: templates/claude-settings-hooks.json")
+        raise SystemExit("无效 hook settings 模板: templates/claude-settings-hooks.json")
     return data
 
 
@@ -642,7 +642,7 @@ def write_text(path: Path, content: str, dry_run: bool, changed: list[str]) -> N
 
 def create_if_missing(path: Path, content: str, dry_run: bool, changed: list[str], notes: list[str]) -> None:
     if path.exists():
-        notes.append(f"Preserved existing {path}; inspect and repair manually if needed.")
+        notes.append(f"已保留现有 {path}; 如有需要请手动检查并修复。")
         return
     write_text(path, content, dry_run, changed)
 
@@ -688,7 +688,7 @@ def add_gitignore_entries(repo: Path, entries: Iterable[str], dry_run: bool, cha
     missing = [entry for entry in entries if entry not in existing]
     if not missing:
         return
-    additions = ["", "# Agent handoff local memory", *missing]
+    additions = ["", "# Agent handoff 本地记忆", *missing]
     content = "\n".join(lines + additions).lstrip("\n").rstrip() + "\n"
     write_text(path, content, dry_run, changed)
 
@@ -699,14 +699,14 @@ def merge_readonly_permissions(repo: Path, dry_run: bool, changed: list[str]) ->
         try:
             data = json.loads(read_text(path))
         except json.JSONDecodeError as exc:
-            raise SystemExit(f"Cannot merge permissions into invalid JSON: {path}: {exc}") from exc
+            raise SystemExit(f"无法将 permissions 合并到无效 JSON: {path}: {exc}") from exc
     else:
         data = {}
 
     permissions = data.setdefault("permissions", {})
     allow = permissions.setdefault("allow", [])
     if not isinstance(allow, list):
-        raise SystemExit(f"Cannot merge permissions: permissions.allow is not a list in {path}")
+        raise SystemExit(f"无法合并 permissions: {path} 中的 permissions.allow 不是列表")
 
     for item in READONLY_ALLOW:
         if item not in allow:
@@ -721,11 +721,11 @@ def load_settings_json(path: Path) -> dict:
         try:
             data = json.loads(read_text(path))
         except json.JSONDecodeError as exc:
-            raise SystemExit(f"Cannot update invalid JSON: {path}: {exc}") from exc
+            raise SystemExit(f"无法更新无效 JSON: {path}: {exc}") from exc
     else:
         data = {}
     if not isinstance(data, dict):
-        raise SystemExit(f"Cannot update settings: root JSON value is not an object in {path}")
+        raise SystemExit(f"无法更新 settings: {path} 中的根 JSON 值不是对象")
     return data
 
 
@@ -736,12 +736,12 @@ def merge_hook_settings(repo: Path, dry_run: bool, changed: list[str]) -> None:
 
     hooks = data.setdefault("hooks", {})
     if not isinstance(hooks, dict):
-        raise SystemExit(f"Cannot merge hooks: hooks is not an object in {path}")
+        raise SystemExit(f"无法合并 hooks: {path} 中的 hooks 不是对象")
 
     for event, groups in template["hooks"].items():
         existing_groups = hooks.setdefault(event, [])
         if not isinstance(existing_groups, list):
-            raise SystemExit(f"Cannot merge hooks: hooks.{event} is not a list in {path}")
+            raise SystemExit(f"无法合并 hooks: {path} 中的 hooks.{event} 不是列表")
 
         found = False
         for group in existing_groups:
@@ -775,8 +775,8 @@ def install_hooks(repo: Path, dry_run: bool, changed: list[str], notes: list[str
         elif HOOK_SCRIPT_START in existing and HOOK_SCRIPT_END in existing:
             write_text(script_path, replace_marked_script(existing, script), dry_run, changed)
         else:
-            notes.append(f"Preserved existing {script_path}; it has no Agent handoff markers, so hook script was not overwritten.")
-            notes.append("Skipped hook settings merge to avoid wiring an unverified existing hook script.")
+            notes.append(f"已保留现有 {script_path}; 其中没有 Agent handoff 标记，因此未覆盖 hook 脚本。")
+            notes.append("已跳过 hook settings 合并，以避免接入未经验证的现有 hook 脚本。")
             script_ready = False
     else:
         write_text(script_path, script, dry_run, changed)
@@ -803,32 +803,32 @@ def create_multi_layout(repo: Path, dry_run: bool, changed: list[str], notes: li
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description="Bootstrap Agent handoff files for a repository.")
-    parser.add_argument("--repo", default=".", help="Repository root. Defaults to current directory.")
+    parser = argparse.ArgumentParser(description="为仓库引导创建 Agent handoff 文件。")
+    parser.add_argument("--repo", default=".", help="仓库根目录。默认为当前目录。")
     parser.add_argument(
         "--platform",
         choices=["codex", "claude", "both"],
         default="both",
-        help="Project rule target: codex updates AGENTS.md, claude updates .claude/CLAUDE.md, both updates both.",
+        help="项目规则目标: codex 更新 AGENTS.md, claude 更新 .claude/CLAUDE.md, both 同时更新两者。",
     )
     parser.add_argument(
         "--layout",
         choices=["single", "multi"],
         default="multi",
-        help="Handoff layout: single creates legacy AGENT_HANDOFF.md, multi creates AGENT_HANDOFF.md plus .agent-handoff/*.md.",
+        help="Handoff 布局: single 创建旧版 AGENT_HANDOFF.md, multi 创建 AGENT_HANDOFF.md 以及 .agent-handoff/*.md。",
     )
-    parser.add_argument("--session-prompts", action="store_true", help="Create AGENT_SESSION_PROMPTS.md if missing.")
-    parser.add_argument("--gitignore", action="store_true", help="Add local handoff files to .gitignore if missing.")
-    parser.add_argument("--allow-readonly", action="store_true", help="Claude Code only: merge safe read-only query permissions into .claude/settings.json.")
-    parser.add_argument("--install-hooks", action="store_true", help="Claude Code only: install advisory handoff hooks into .claude/hooks and merge .claude/settings.json.")
-    parser.add_argument("--skip-codex-rules", action="store_true", help="Do not create or update AGENTS.md.")
-    parser.add_argument("--skip-claude-rules", action="store_true", help="Do not create or update .claude/CLAUDE.md.")
-    parser.add_argument("--dry-run", action="store_true", help="Print planned changes without writing files.")
+    parser.add_argument("--session-prompts", action="store_true", help="缺少 AGENT_SESSION_PROMPTS.md 时创建该文件。")
+    parser.add_argument("--gitignore", action="store_true", help="缺少条目时，将本地 handoff 文件加入 .gitignore。")
+    parser.add_argument("--allow-readonly", action="store_true", help="仅 Claude Code: 将安全的只读查询权限合并到 .claude/settings.json。")
+    parser.add_argument("--install-hooks", action="store_true", help="仅 Claude Code: 将提示型 handoff hooks 安装到 .claude/hooks 并合并 .claude/settings.json。")
+    parser.add_argument("--skip-codex-rules", action="store_true", help="不要创建或更新 AGENTS.md。")
+    parser.add_argument("--skip-claude-rules", action="store_true", help="不要创建或更新 .claude/CLAUDE.md。")
+    parser.add_argument("--dry-run", action="store_true", help="打印计划变更，但不写入文件。")
     args = parser.parse_args()
 
     repo = Path(args.repo).expanduser().resolve()
     if not repo.exists() or not repo.is_dir():
-        raise SystemExit(f"Repository path is not a directory: {repo}")
+        raise SystemExit(f"仓库路径不是目录: {repo}")
 
     changed: list[str] = []
     notes: list[str] = []
@@ -869,19 +869,19 @@ def main() -> int:
 
     mode = "DRY RUN" if args.dry_run else "UPDATED"
     print(f"{mode}: {repo}")
-    print(f"Layout: {args.layout}")
-    print(f"Platform rules: {args.platform}")
+    print(f"布局: {args.layout}")
+    print(f"平台规则: {args.platform}")
     if changed:
-        print("Changed files:")
+        print("已变更文件:")
         for item in changed:
             print(f"- {item}")
     else:
-        print("Changed files: none")
+        print("已变更文件: 无")
     if notes:
-        print("Notes:")
+        print("注意事项:")
         for note in notes:
             print(f"- {note}")
-    print("Next: inspect generated files and replace UNKNOWN placeholders with repository facts.")
+    print("下一步: 检查生成的文件，并用仓库事实替换 UNKNOWN 占位符。")
     return 0
 
 

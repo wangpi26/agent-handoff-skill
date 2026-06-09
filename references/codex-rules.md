@@ -1,19 +1,19 @@
-# Codex Handoff Rules
+# Codex Handoff 规则
 
-Merge a marked block into project-level `AGENTS.md` for Codex. If the repository already has an `AGENTS.md`, preserve existing guidance and replace only the marked block when present. Do not edit user-level `~/.codex/AGENTS.md` unless the user explicitly asks.
+将带标记的代码块合并到 Codex 的项目级 `AGENTS.md`。如果仓库已有 `AGENTS.md`，保留现有指引；存在标记块时只替换该标记块。除非用户明确要求，不要编辑用户级 `~/.codex/AGENTS.md`。
 
-Codex uses `AGENTS.md` as repository instructions. This file is the Codex-side counterpart to Claude Code's `.claude/CLAUDE.md`.
+Codex 使用 `AGENTS.md` 作为仓库指令。此文件是 Claude Code `.claude/CLAUDE.md` 在 Codex 侧的对应说明。
 
-Prefer generating the block with `scripts/bootstrap_handoff.py` so it matches the chosen layout:
+优先使用 `scripts/bootstrap_handoff.py` 生成该代码块，确保它与所选布局匹配：
 
 ```bash
 python <skill-dir>/scripts/bootstrap_handoff.py --repo <repo-root> --platform codex --layout multi
 python <skill-dir>/scripts/bootstrap_handoff.py --repo <repo-root> --platform codex --layout single
 ```
 
-If the markers already exist, replace only the marked block.
+如果标记已存在，只替换标记块。
 
-## Markers
+## 标记
 
 ```markdown
 <!-- AGENT_HANDOFF_PROTOCOL:START -->
@@ -21,49 +21,49 @@ If the markers already exist, replace only the marked block.
 <!-- AGENT_HANDOFF_PROTOCOL:END -->
 ```
 
-## Multi-Document Startup Rule
+## 多文档启动规则
 
-For `--layout multi`, the generated Codex rule instructs future agents to read:
+对于 `--layout multi`，生成的 Codex 规则会指示未来 agent 读取：
 
 1. `AGENT_HANDOFF.md`
 2. `.agent-handoff/snapshot.md`
 3. `.agent-handoff/risks.md`
 4. `.agent-handoff/backlog.md`
-5. Additional `.agent-handoff/` files only when needed
-6. Task-relevant source files
+5. 仅在需要时读取其他 `.agent-handoff/` 文件
+6. 与任务相关的源文件
 
-`AGENT_HANDOFF.md` must remain an index. Current task state belongs in `.agent-handoff/snapshot.md`.
+`AGENT_HANDOFF.md` 必须保持为索引。当前任务状态属于 `.agent-handoff/snapshot.md`。
 
-## Continuation Recovery Guard
+## 续接恢复保护
 
-If the user says `continue`, `继续`, `Continue from where you left off.`, or any equivalent continuation request, treat it as an explicit instruction to resume the task. Do not answer `No response requested.` and do not stop silently. First state the last known objective and next concrete action, then continue. If context is insufficient, recover from the handoff files and task-relevant source files before acting.
+如果用户说 `continue`、`继续`、`Continue from where you left off.` 或任何等价的续接请求，应将其视为恢复任务的明确指令。不要回答 `No response requested.`，也不要静默停止。先说明最后已知目标和下一个具体动作，然后继续。如果上下文不足，先从 handoff 文件和任务相关源文件恢复上下文，再行动。
 
-## Stable File Reading Protocol
+## 稳定文件读取协议
 
-Generated Codex rules include a defensive Read protocol:
+生成的 Codex 规则包含防御性的 Read 协议：
 
-- Keep Read ranges no larger than 240 lines unless the file is known to be small.
-- Treat Read `offset` as a line number, not a character offset.
-- Stop paging with Read for a file after unexpected empty output, offset warnings, stale snippets, inconsistent line numbers, `file is shorter than the provided offset`, or API termination after a Read attempt.
-- Re-anchor with targeted search before any follow-up read after an offset failure.
-- Use small, quoted, read-only shell inspections such as `wc -l`, `rg -n`, and `sed -n '<start>,<end>p'` when Read becomes unreliable.
-- Do not propose or edit code based on uncertain offsets.
+- 除非已知文件很小，否则 Read 范围不要超过 240 行。
+- 将 Read `offset` 视为行号，而不是字符偏移。
+- 如果某个文件在 Read 后出现意外空输出、offset 警告、陈旧片段、不一致的行号、`file is shorter than the provided offset`，或 Read 尝试后 API 终止，应停止对该文件继续分页读取。
+- offset 失败后，任何后续读取前都要通过定向搜索重新锚定。
+- 当 Read 变得不可靠时，使用小范围、带引用、只读的 shell 检查，例如 `wc -l`、`rg -n` 和 `sed -n '<start>,<end>p'`。
+- 不要基于不确定的 offset 提议或编辑代码。
 
-## Single-Document Startup Rule
+## 单文档启动规则
 
-For `--layout single`, the generated Codex rule instructs future agents to read:
+对于 `--layout single`，生成的 Codex 规则会指示未来 agent 读取：
 
 1. `AGENT_HANDOFF.md`
-2. Task-specific docs referenced by `AGENT_HANDOFF.md`
-3. Task-relevant source files
+2. `AGENT_HANDOFF.md` 引用的任务特定文档
+3. 与任务相关的源文件
 
-All state stays in `AGENT_HANDOFF.md`.
+所有状态都保留在 `AGENT_HANDOFF.md` 中。
 
-## Closeout Requirement
+## 收尾要求
 
-For non-trivial tasks:
+对于非平凡任务：
 
-- Multi layout: update the smallest relevant `.agent-handoff/` files before final response.
-- Single layout: update `AGENT_HANDOFF.md` before final response.
+- Multi layout: 最终回复前更新最小范围的相关 `.agent-handoff/` 文件。
+- Single layout: 最终回复前更新 `AGENT_HANDOFF.md`。
 
-Do not paste secrets, credentials, long logs, full code blocks, or chat transcript dumps.
+不要粘贴密钥、凭据、长日志、完整代码块或聊天记录转储。

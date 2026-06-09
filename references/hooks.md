@@ -1,53 +1,53 @@
-# Optional Claude Code Hook Enforcement
+# 可选 Claude Code Hook 强制提醒
 
-Use hooks only when the user asks for stronger operational reminders than written project rules. Hooks must check and remind; they must not generate handoff content, because closeout state needs repository context and agent judgment.
+仅当用户要求比书面项目规则更强的操作提醒时使用 hooks。Hooks 必须检查并提醒；不得生成 handoff 内容，因为收尾状态需要仓库上下文和 agent 判断。
 
-This hook guidance is Claude Code specific. Codex does not use Claude hooks, and the default bootstrap command does not install hooks unless `--install-hooks` is passed.
+此 hook 指南仅适用于 Claude Code。Codex 不使用 Claude hooks，默认 bootstrap 命令也不会安装 hooks，除非传入 `--install-hooks`。
 
-## Safety Contract
+## 安全契约
 
-- Keep hooks lightweight, local, and project-scoped.
-- Always emit valid JSON when output is needed.
-- Always exit with status code `0`, including error paths.
-- Always return `continue: true` when returning JSON.
-- Never return `decision: "block"`, `continue: false`, or `decision: "approve"`.
-- Never use hook failures to terminate, block, or close an agent session.
-- Never write handoff files from a hook.
-- Never call the network, install dependencies, delete files, start services, or mutate project state.
-- Preserve existing user hook scripts unless they contain the Agent handoff hook markers.
+- 保持 hooks 轻量、本地、限定在项目范围内。
+- 需要输出时始终输出有效 JSON。
+- 始终以状态码 `0` 退出，包括错误路径。
+- 返回 JSON 时始终返回 `continue: true`。
+- 永远不要返回 `decision: "block"`、`continue: false` 或 `decision: "approve"`。
+- 永远不要用 hook 失败来终止、阻塞或关闭 agent 会话。
+- 永远不要从 hook 写入 handoff 文件。
+- 永远不要调用网络、安装依赖、删除文件、启动服务或修改项目状态。
+- 保留已有用户 hook 脚本，除非其中包含 Agent handoff hook 标记。
 
-`statusMessage` belongs to `.claude/settings.json` and is only a Claude Code UI label while a hook command runs. The hook script must not depend on it. Event behavior must come from Claude Code hook stdin JSON, especially `hook_event_name`.
+`statusMessage` 属于 `.claude/settings.json`，只是在 hook 命令运行时显示的 Claude Code UI 标签。hook 脚本不得依赖它。事件行为必须来自 Claude Code hook stdin JSON，尤其是 `hook_event_name`。
 
-## Recommended Install
+## 推荐安装
 
-Use the bootstrap script only when the user explicitly asks for hooks:
+仅当用户明确要求 hooks 时使用 bootstrap 脚本：
 
 ```bash
 python <skill-dir>/scripts/bootstrap_handoff.py --repo <repo-root> --install-hooks
 ```
 
-This command:
+此命令会：
 
-- Creates `.claude/hooks/handoff-watch.mjs` if missing.
-- Replaces only the marked Agent handoff hook block if the target script already contains the hook markers.
-- Preserves an existing `.claude/hooks/handoff-watch.mjs` with no Agent handoff markers.
-- Merges missing hook entries into `.claude/settings.json`.
-- Avoids duplicating hook commands on repeated runs.
+- 如果缺失，创建 `.claude/hooks/handoff-watch.mjs`。
+- 如果目标脚本已有 hook 标记，只替换带标记的 Agent handoff hook 块。
+- 保留没有 Agent handoff 标记的现有 `.claude/hooks/handoff-watch.mjs`。
+- 将缺失的 hook 条目合并到 `.claude/settings.json`。
+- 避免重复运行时生成重复的 hook 命令。
 
-Use `--dry-run` first when changing an existing project:
+修改已有项目时，先使用 `--dry-run`：
 
 ```bash
 python <skill-dir>/scripts/bootstrap_handoff.py --repo <repo-root> --install-hooks --dry-run
 ```
 
-## Template Files
+## 模板文件
 
-- `templates/claude-settings-hooks.json`: Event-aware `.claude/settings.json` hook snippet for manual merge or script installation.
-- `templates/handoff-watch.mjs`: Complete advisory hook script that checks handoff file freshness and structure.
+- `templates/claude-settings-hooks.json`: 可用于手动合并或脚本安装的事件感知 `.claude/settings.json` hook 片段。
+- `templates/handoff-watch.mjs`: 完整的建议型 hook 脚本，用于检查 handoff 文件的新鲜度和结构。
 
-When manually installing hooks, merge only the `hooks` object from `templates/claude-settings-hooks.json` into the project's `.claude/settings.json`. Do not overwrite unrelated settings.
+手动安装 hooks 时，只将 `templates/claude-settings-hooks.json` 中的 `hooks` 对象合并到项目的 `.claude/settings.json`。不要覆盖无关设置。
 
-## Installed Target Files
+## 安装目标文件
 
 ```text
 .claude/
@@ -56,82 +56,82 @@ When manually installing hooks, merge only the `hooks` object from `templates/cl
     handoff-watch.mjs
 ```
 
-## Supported Events
+## 支持的事件
 
 | Event | Behavior |
 | --- | --- |
-| `SessionStart` | Inject handoff health and recovery reading guidance as additional context. |
-| `UserPromptSubmit` | Inject context only when the prompt suggests handoff, continue, resume, compact, closeout, or recovery work, or when handoff structure is missing. |
-| `PreCompact` | Remind the agent to update handoff files before compaction if task state changed. |
-| `Stop` | Remind the agent to update relevant handoff files before final response if repository state changed. |
-| `SubagentStop` | Same closeout reminder behavior as `Stop`, with stop-loop suppression. |
-| `SessionEnd` | Emit a quiet session-end summary. |
+| `SessionStart` | 注入 handoff 健康状态和恢复读取指引作为附加上下文。 |
+| `UserPromptSubmit` | 仅当 prompt 暗示 handoff、continue、resume、compact、closeout 或 recovery 工作，或 handoff 结构缺失时注入上下文。 |
+| `PreCompact` | 如果任务状态已改变，提醒 agent 在压缩上下文前更新 handoff 文件。 |
+| `Stop` | 如果仓库状态已改变，提醒 agent 在最终回复前更新相关 handoff 文件。 |
+| `SubagentStop` | 与 `Stop` 相同的收尾提醒行为，并带有 stop-loop 抑制。 |
+| `SessionEnd` | 输出安静的会话结束摘要。 |
 
-## Checks
+## 检查
 
-General checks:
+通用检查：
 
-- `AGENT_HANDOFF.md` exists.
-- `AGENT_HANDOFF.md` is not older than the configured threshold.
-- Claude Code hook stdin JSON can be parsed.
+- `AGENT_HANDOFF.md` 存在。
+- `AGENT_HANDOFF.md` 未超过配置的陈旧阈值。
+- Claude Code hook stdin JSON 可被解析。
 
-Multi-document layout checks:
+多文档布局检查：
 
-- `.agent-handoff/` exists.
-- Expected files exist: `snapshot.md`, `workspace.md`, `decisions.md`, `work-log.md`, `validation.md`, `backlog.md`, `risks.md`, `archive.md`.
-- `AGENT_HANDOFF.md` contains `## Recovery Reading Order`.
-- `AGENT_HANDOFF.md` contains `## Handoff Layout`.
-- `.agent-handoff/snapshot.md` contains `## Current State` when the snapshot file is present.
+- `.agent-handoff/` 存在。
+- 预期文件存在：`snapshot.md`、`workspace.md`、`decisions.md`、`work-log.md`、`validation.md`、`backlog.md`、`risks.md`、`archive.md`。
+- `AGENT_HANDOFF.md` 包含 `## 恢复阅读顺序`。
+- `AGENT_HANDOFF.md` 包含 `## Handoff 布局`。
+- 当 snapshot 文件存在时，`.agent-handoff/snapshot.md` 包含 `## 当前状态`。
 
-Single-document layout checks:
+单文档布局检查：
 
-- `AGENT_HANDOFF.md` contains `## Handoff Snapshot`.
-- `AGENT_HANDOFF.md` contains `## Current Work Log`.
-- `AGENT_HANDOFF.md` contains `## Validation History`.
-- `AGENT_HANDOFF.md` contains `## Task Backlog`.
+- `AGENT_HANDOFF.md` 包含 `## Handoff 快照`。
+- `AGENT_HANDOFF.md` 包含 `## 当前工作日志`。
+- `AGENT_HANDOFF.md` 包含 `## 验证历史`。
+- `AGENT_HANDOFF.md` 包含 `## 任务积压`。
 
-## Output Policy
+## 输出策略
 
-The hook is advisory only. It explicitly returns `continue: true` and never emits a blocking decision.
+此 hook 仅提供建议。它显式返回 `continue: true`，且永远不会发出阻塞决策。
 
-It may use:
+它可以使用：
 
-- `hookSpecificOutput.additionalContext` for startup and prompt-context injection.
-- `systemMessage` for closeout, compaction, manual, or error reminders.
-- `suppressOutput: true` for quiet no-op paths such as irrelevant `UserPromptSubmit`, active stop-loop suppression, and `SessionEnd`.
+- `hookSpecificOutput.additionalContext` 用于启动和 prompt 上下文注入。
+- `systemMessage` 用于收尾、压缩、手动操作或错误提醒。
+- `suppressOutput: true` 用于安静的 no-op 路径，例如无关的 `UserPromptSubmit`、活动的 stop-loop 抑制和 `SessionEnd`。
 
-The hook should surface useful reminders without taking control away from the agent.
+Hook 应暴露有用提醒，但不应从 agent 手中夺走控制权。
 
-## Retry Policy
+## 重试策略
 
-Retry only narrow failures that may be transient inside the current hook process:
+仅重试当前 hook 进程内可能是瞬态的窄范围失败：
 
-- stdin read problems
-- JSON parse problems from incomplete hook input
+- stdin 读取问题
+- 不完整 hook 输入导致的 JSON 解析问题
 
-Repository state problems are not retried because retrying would not change them:
+仓库状态问题不重试，因为重试不会改变它们：
 
-- missing handoff files
-- missing required sections
-- stale timestamps
-- mixed or incomplete layout
+- 缺少 handoff 文件
+- 缺少必需章节
+- 陈旧时间戳
+- 混合或不完整布局
 
-Report repository state problems directly to the agent.
+直接向 agent 报告仓库状态问题。
 
-## Arguments And Environment
+## 参数和环境
 
 | Name | Purpose |
 | --- | --- |
-| `--project-dir <path>` | Set project root for manual testing. |
-| `--event <name>` | Set the hook event when stdin is not provided. |
-| `--max-age-minutes <n>` | Set stale handoff threshold. Default is `120`. |
-| `CLAUDE_PROJECT_DIR` | Project root from Claude Code. Preferred over stdin `cwd`. |
-| `HANDOFF_MAX_AGE_MINUTES=<n>` | Same as `--max-age-minutes <n>`. |
+| `--project-dir <path>` | 设置用于手动测试的项目根目录。 |
+| `--event <name>` | 未提供 stdin 时设置 hook 事件。 |
+| `--max-age-minutes <n>` | 设置 handoff 陈旧阈值。默认值为 `120`。 |
+| `CLAUDE_PROJECT_DIR` | Claude Code 提供的项目根目录。优先于 stdin `cwd`。 |
+| `HANDOFF_MAX_AGE_MINUTES=<n>` | 等同于 `--max-age-minutes <n>`。 |
 
-Manual test:
+手动测试：
 
 ```bash
 node .claude/hooks/handoff-watch.mjs --project-dir <repo-root> --event Stop
 ```
 
-If stricter enforcement is desired, do not change this template to block by default. First confirm the desired behavior with the user and document the operational risk, because a blocking hook can interrupt normal closeout or startup.
+如果需要更严格的强制执行，不要修改此模板让其默认阻塞。请先向用户确认期望行为并记录操作风险，因为阻塞型 hook 可能中断正常收尾或启动。

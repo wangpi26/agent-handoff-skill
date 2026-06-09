@@ -15,10 +15,10 @@ const MULTI_FILES = [
 ];
 
 const SINGLE_HEADINGS = [
-  "## Handoff Snapshot",
-  "## Current Work Log",
-  "## Validation History",
-  "## Task Backlog"
+  "## Handoff 快照",
+  "## 当前工作日志",
+  "## 验证历史",
+  "## 任务积压"
 ];
 
 const PROMPT_TRIGGERS = [
@@ -99,8 +99,8 @@ function readHookInputWithRetry() {
     } catch (error) {
       const retryable = error instanceof SyntaxError || error.code === "EAGAIN";
       lastWarning = retryable
-        ? `Hook stdin read/parse issue after attempt ${attempt + 1}: ${error.message}`
-        : `Could not read hook stdin: ${error.message}`;
+        ? `Hook stdin 在第 ${attempt + 1} 次尝试后读取/解析异常: ${error.message}`
+        : `无法读取 hook stdin: ${error.message}`;
       if (!retryable || attempt === INPUT_RETRY_LIMIT) {
         return { input: {}, parseWarning: lastWarning };
       }
@@ -143,7 +143,7 @@ function buildHealth(projectDir, maxAgeMinutes, parseWarning) {
   if (parseWarning) health.warnings.push(parseWarning);
 
   if (!exists(handoffPath)) {
-    health.critical.push("AGENT_HANDOFF.md is missing.");
+    health.critical.push("缺少 AGENT_HANDOFF.md。");
     return health;
   }
 
@@ -156,19 +156,19 @@ function buildHealth(projectDir, maxAgeMinutes, parseWarning) {
       }
     }
 
-    if (!content.includes("## Recovery Reading Order")) {
+    if (!content.includes("## 恢复阅读顺序")) {
       health.critical.push(
-        "Multi-document layout exists, but AGENT_HANDOFF.md does not contain '## Recovery Reading Order'."
+        "多文档布局已存在，但 AGENT_HANDOFF.md 不包含 '## 恢复阅读顺序'。"
       );
     }
 
-    if (!content.includes("## Handoff Layout")) {
-      health.warnings.push("AGENT_HANDOFF.md does not contain '## Handoff Layout'.");
+    if (!content.includes("## Handoff 布局")) {
+      health.warnings.push("AGENT_HANDOFF.md 不包含 '## Handoff 布局'。");
     }
 
     const snapshot = readSmallText(path.join(handoffDir, "snapshot.md"));
-    if (snapshot && !snapshot.includes("## Current State")) {
-      health.warnings.push(".agent-handoff/snapshot.md does not contain '## Current State'.");
+    if (snapshot && !snapshot.includes("## 当前状态")) {
+      health.warnings.push(".agent-handoff/snapshot.md 不包含 '## 当前状态'。");
     }
   } else {
     health.layout = "single";
@@ -181,12 +181,12 @@ function buildHealth(projectDir, maxAgeMinutes, parseWarning) {
   }
 
   if (health.missing.length > 0) {
-    health.critical.push(`Missing expected handoff structure: ${health.missing.join(", ")}.`);
+    health.critical.push(`缺少预期的 handoff 结构: ${health.missing.join(", ")}。`);
   }
 
   if (health.ageMinutes !== null && health.ageMinutes > maxAgeMinutes) {
     health.warnings.push(
-      `AGENT_HANDOFF.md was last modified about ${health.ageMinutes} minutes ago.`
+      `AGENT_HANDOFF.md 约 ${health.ageMinutes} 分钟前最后修改。`
     );
   }
 
@@ -196,23 +196,23 @@ function buildHealth(projectDir, maxAgeMinutes, parseWarning) {
 function recoveryHint(health) {
   if (health.layout === "multi") {
     return [
-      "Read AGENT_HANDOFF.md first.",
-      "Then read .agent-handoff/snapshot.md, .agent-handoff/risks.md, and .agent-handoff/backlog.md.",
-      "Read validation, decisions, workspace, work-log, and archive only when task-relevant."
+      "先读取 AGENT_HANDOFF.md。",
+      "然后读取 .agent-handoff/snapshot.md、.agent-handoff/risks.md 和 .agent-handoff/backlog.md。",
+      "仅在与任务相关时读取 validation、decisions、workspace、work-log 和 archive。"
     ].join(" ");
   }
 
   if (health.layout === "single") {
-    return "Read AGENT_HANDOFF.md first, then inspect only task-relevant source files.";
+    return "先读取 AGENT_HANDOFF.md，然后只检查与任务相关的源文件。";
   }
 
-  return "Create or repair AGENT_HANDOFF.md before relying on repository handoff memory.";
+  return "依赖仓库 handoff 记忆前，先创建或修复 AGENT_HANDOFF.md。";
 }
 
 function healthSummary(health) {
   const parts = [
-    `Agent handoff health: layout=${health.layout}`,
-    health.ageMinutes === null ? "age=unknown" : `age=${health.ageMinutes}m`
+    `Agent handoff 健康状态: layout=${health.layout}`,
+    health.ageMinutes === null ? "age=未知" : `age=${health.ageMinutes}m`
   ];
 
   if (health.critical.length) parts.push(`critical=${health.critical.join(" ")}`);
@@ -283,7 +283,7 @@ try {
     case "PreCompact": {
       writeJson(
         systemOutput(
-          `${summary} Before compaction, update handoff files if the current task state changed.`,
+          `${summary} 压缩前，如果当前任务状态已变化，请更新 handoff 文件。`,
           false
         )
       );
@@ -299,7 +299,7 @@ try {
 
       writeJson(
         systemOutput(
-          `${summary} If repository state changed, update the relevant handoff files before final response.`,
+          `${summary} 如果仓库状态已变化，请在最终回复前更新相关 handoff 文件。`,
           false
         )
       );
@@ -307,7 +307,7 @@ try {
     }
 
     case "SessionEnd": {
-      writeJson(systemOutput(`Session ending. ${summary}`, true));
+      writeJson(systemOutput(`会话即将结束。${summary}`, true));
       break;
     }
 
@@ -319,7 +319,7 @@ try {
 } catch (error) {
   writeJson(
     systemOutput(
-      `Handoff hook failed softly: ${error.message}. Manually verify AGENT_HANDOFF.md before closeout.`,
+      `Handoff hook 软失败: ${error.message}。收尾前请手动验证 AGENT_HANDOFF.md。`,
       false
     )
   );

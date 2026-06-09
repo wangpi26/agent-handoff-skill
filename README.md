@@ -1,10 +1,10 @@
 # Agent Handoff Skill
 
-[中文](README.md) | [English](README_en.md)
+[中文](README.md) | [README_en（中文）](README_en.md)
 
 如果这个 skill 对你的 Agent 接力流程有帮助，欢迎给仓库点一个 Star，让更多人更容易找到它。
 
-![Agent Handoff Skill hero](assets/readme/hero.svg)
+![Agent Handoff Skill 展示图](assets/readme/hero.svg)
 
 一个给 Codex / Claude Code / AI Coding Agent 使用的 **可持续接力机制 skill**。
 
@@ -24,7 +24,7 @@
 
 当前仓库里的 `agents/openai.yaml` 是 Codex UI 元数据；Claude Code 不需要它。保留它不会影响 Claude Code 使用这个 skill。
 
-## 为什么会有这个 Skill
+## 为什么会有这个 skill
 
 在长时间使用 AI Coding Agent 做真实项目时，常见断点通常不是“代码不会写”，而是这些更现实的问题：
 
@@ -37,7 +37,7 @@
 
 `agent-handoff` 把这些经验固化为一个可复用 skill：它会指导 Agent 在仓库内创建或修复一套稳定的接力机制，并提供一个幂等 bootstrap 脚本，减少重复复制提示词和手工拼模板的错误。
 
-它还会把更保守的文件读取协议写进项目规则：`Read` 范围默认不超过 240 行，`offset` 必须按行号处理，遇到 offset 漂移、空输出、stale snippet 或 API termination 时停止继续分页读取，并用搜索或只读 shell 命令重新锚定后再行动。
+它还会把更保守的文件读取协议写进项目规则：`Read` 范围默认不超过 240 行，`offset` 必须按行号处理，遇到 offset 漂移、空输出、过期片段或 API termination 时停止继续分页读取，并用搜索或只读 shell 命令重新锚定后再行动。
 
 ## 它创建什么
 
@@ -51,7 +51,7 @@
 | `.agent-handoff/decisions.md` | 重要决策、原因和证据。 |
 | `.agent-handoff/work-log.md` | 近期仍有操作价值的工作日志。 |
 | `.agent-handoff/validation.md` | 验证命令、结果、失败原因和未跑测试说明。 |
-| `.agent-handoff/backlog.md` | 待办和 follow-up。 |
+| `.agent-handoff/backlog.md` | 待办和后续项。 |
 | `.agent-handoff/risks.md` | 风险、阻塞点、`UNKNOWN` 和需要确认的信息。 |
 | `.agent-handoff/archive.md` | 压缩后的旧历史，不参与默认恢复。 |
 | `AGENTS.md` | Codex 项目级 instructions 文件，写入 Codex 会读取的接力维护规则。 |
@@ -73,15 +73,15 @@
 
 ## 它怎么工作
 
-![Agent Handoff workflow](assets/readme/workflow.svg)
+![Agent Handoff 工作流](assets/readme/workflow.svg)
 
 `agent-handoff` 的运行逻辑可以理解为一个闭环：
 
-1. **Inspect**：先看仓库结构，不直接写模板。
-2. **Bootstrap**：创建或合并必要的接力文件和项目规则。
-3. **Maintain**：任务过程中持续记录目标、决策、活跃文件、验证和风险。
-4. **Closeout**：非纯聊天任务结束前，主动刷新 `AGENT_HANDOFF.md` 或相关 `.agent-handoff/` 文件。
-5. **Recover**：下一位 Agent 从接力文档恢复状态，再按需读取源码。
+1. **检查**：先看仓库结构，不直接写模板。
+2. **初始化**：创建或合并必要的接力文件和项目规则。
+3. **维护**：任务过程中持续记录目标、决策、活跃文件、验证和风险。
+4. **收尾**：非纯聊天任务结束前，主动刷新 `AGENT_HANDOFF.md` 或相关 `.agent-handoff/` 文件。
+5. **恢复**：下一位 Agent 从接力文档恢复状态，再按需读取源码。
 
 这个闭环的重点不是让 Agent 少读源码，而是让 Agent 少读无关历史。`AGENT_HANDOFF.md` 只负责告诉下一位 Agent “从哪里开始读”，具体实现仍然必须从源码和测试中验证。
 
@@ -99,7 +99,7 @@
 
 ## 主要应用场景
 
-![Agent Handoff scenarios](assets/readme/scenarios.svg)
+![Agent Handoff 应用场景](assets/readme/scenarios.svg)
 
 ### 1. 新项目初始化
 
@@ -109,7 +109,7 @@
 使用 agent-handoff skill，为当前项目初始化接力机制。
 ```
 
-它会检查仓库结构，创建 `AGENT_HANDOFF.md`，并按平台把 Durable Handoff 规则合并到：
+它会检查仓库结构，创建 `AGENT_HANDOFF.md`，并按平台把持久接力规则合并到：
 
 - Codex：`AGENTS.md`
 - Claude Code：`.claude/CLAUDE.md`
@@ -309,7 +309,7 @@ Agent 应该做：
 2. 读取当前 `AGENT_HANDOFF.md`。
 3. 检查与仓库事实冲突的内容。
 4. 压缩陈旧历史。
-5. 刷新 Snapshot、Work Log、Validation History、Backlog。
+5. 刷新快照、工作日志、验证历史和待办。
 6. 保留有证据的决策，删除聊天流水账。
 
 ### 为查询操作合并只读权限
@@ -420,7 +420,7 @@ AGENT_HANDOFF.md
 如果没有检查源码或配置，更好的写法是：
 
 ```markdown
-- UNKNOWN: Backend/database stack needs confirmation from repository files.
+- UNKNOWN: 后端/数据库技术栈需要从仓库文件中确认。
 ```
 
 ### 2. 状态比历史更重要
@@ -449,7 +449,7 @@ AGENT_HANDOFF.md
 
 ### 6. 稳定读取优先于盲目翻页
 
-生成的 `AGENTS.md` 和 `.claude/CLAUDE.md` 会要求 Agent 以小范围、可锚定的方式读取文件。Read offset 必须当作行号；如果出现空输出、offset warning、行号不一致、`file is shorter than the provided offset` 或 Read 后 API termination，Agent 必须停止继续用 Read 翻页，改用 `rg -n`、`wc -l`、`sed -n` 等只读命令重新定位。
+生成的 `AGENTS.md` 和 `.claude/CLAUDE.md` 会要求 Agent 以小范围、可锚定的方式读取文件。Read `offset` 必须当作行号；如果出现空输出、offset warning、行号不一致、`file is shorter than the provided offset` 或 Read 后 API termination，Agent 必须停止继续用 Read 翻页，改用 `rg -n`、`wc -l`、`sed -n` 等只读命令重新定位。
 
 ## 质量清单
 
@@ -470,7 +470,7 @@ AGENT_HANDOFF.md
 - `snapshot.md` 足够短，能说明当前目标、状态、下一步、活跃文件、阻塞点。
 - `risks.md` 包含所有仍有效的风险、阻塞和 `UNKNOWN`。
 - `backlog.md` 是可执行待办，不保留已完成旧项。
-- `validation.md` 清楚记录 passed、failed、not run。
+- `validation.md` 清楚记录已通过、失败和未运行的检查。
 - `decisions.md` 的每个决策都有原因和证据。
 - 新 Agent 只读入口索引、snapshot、risks、backlog、必要 validation/decisions，就能恢复前一个 Agent 的工作状态。
 
@@ -482,6 +482,6 @@ AGENT_HANDOFF.md
 - 如果目标项目已有无 Agent handoff marker 的 `.claude/hooks/handoff-watch.mjs`，脚本会保留它且不会自动把 settings 指向该未知脚本，避免误接入可能阻断会话的自定义 hook。
 - `bootstrap_handoff.py` 不会覆盖已有 `AGENT_HANDOFF.md`，因为已有接力状态必须由 Agent 基于仓库事实修复。
 
-## License
+## 许可证
 
-按你的仓库 License 使用。如果你还没有添加 License，建议在 GitHub 上选择一个明确的开源许可证，例如 MIT。
+按你的仓库许可证使用。如果你还没有添加许可证，建议在 GitHub 上选择一个明确的开源许可证，例如 MIT。
