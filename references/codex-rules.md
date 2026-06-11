@@ -1,10 +1,10 @@
 # Codex Handoff 规则
 
-将带标记的代码块合并到 Codex 的项目级 `AGENTS.md`。如果仓库已有 `AGENTS.md`，保留现有指引；存在标记块时只替换该标记块。除非用户明确要求，不要编辑用户级 `~/.codex/AGENTS.md`。
+将带标记的引用合并到 Codex 的项目级 `AGENTS.md`。如果仓库已有 `AGENTS.md`，保留现有指引；存在标记块时只替换该标记块。除非用户明确要求，不要编辑用户级 `~/.codex/AGENTS.md`。
 
 Codex 使用 `AGENTS.md` 作为仓库指令。此文件是 Claude Code `.claude/CLAUDE.md` 在 Codex 侧的对应说明。
 
-优先使用 `scripts/bootstrap_handoff.py` 生成该代码块，确保它与所选布局匹配：
+优先使用 `scripts/bootstrap_handoff.py` 生成该引用，确保它与所选布局匹配：
 
 ```bash
 python <skill-dir>/scripts/bootstrap_handoff.py --repo <repo-root> --platform codex --layout multi
@@ -23,16 +23,15 @@ python <skill-dir>/scripts/bootstrap_handoff.py --repo <repo-root> --platform co
 
 ## 多文档启动规则
 
-对于 `--layout multi`，生成的 Codex 规则会指示未来 agent 读取：
+对于 `--layout multi`，生成的 Codex 引用仅指向唯一入口：
 
-1. `AGENT_HANDOFF.md`
-2. `.agent-handoff/snapshot.md`
-3. `.agent-handoff/risks.md`
-4. `.agent-handoff/backlog.md`
-5. 仅在需要时读取其他 `.agent-handoff/` 文件
-6. 与任务相关的源文件
+```markdown
+<!-- AGENT_HANDOFF_PROTOCOL:START -->
+跨会话恢复与阶段收口时，按需遵循 `.agent-handoff/README.md`。不要将 handoff 实现细节复制到本规则入口。
+<!-- AGENT_HANDOFF_PROTOCOL:END -->
+```
 
-`AGENT_HANDOFF.md` 必须保持为索引。当前任务状态属于 `.agent-handoff/snapshot.md`。
+详细恢复顺序、文件布局和维护规则由 `.agent-handoff/README.md` 自身承载。
 
 ## 续接恢复保护
 
@@ -51,11 +50,13 @@ python <skill-dir>/scripts/bootstrap_handoff.py --repo <repo-root> --platform co
 
 ## 单文档启动规则
 
-对于 `--layout single`，生成的 Codex 规则会指示未来 agent 读取：
+对于 `--layout single`，生成的 Codex 引用指向旧版入口：
 
-1. `AGENT_HANDOFF.md`
-2. `AGENT_HANDOFF.md` 引用的任务特定文档
-3. 与任务相关的源文件
+```markdown
+<!-- AGENT_HANDOFF_PROTOCOL:START -->
+跨会话恢复与阶段收口时，按需遵循 `AGENT_HANDOFF.md`。不要将 handoff 实现细节复制到本规则入口。
+<!-- AGENT_HANDOFF_PROTOCOL:END -->
+```
 
 所有状态都保留在 `AGENT_HANDOFF.md` 中。
 

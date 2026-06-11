@@ -45,7 +45,7 @@
 
 | 文件 | 作用 |
 | --- | --- |
-| `AGENT_HANDOFF.md` | 多文档模式下是入口索引和恢复路线；单文档模式下保存全部接力状态。 |
+| `.agent-handoff/README.md` | 多文档模式下是入口索引和恢复路线；单文档模式下保存全部接力状态。 |
 | `.agent-handoff/snapshot.md` | 多文档模式下保存当前目标、状态、下一步、活跃文件、阻塞点和开放问题。 |
 | `.agent-handoff/workspace.md` | 项目结构、入口、测试命令、文档和长期项目背景。 |
 | `.agent-handoff/decisions.md` | 重要决策、原因和证据。 |
@@ -80,14 +80,14 @@
 1. **检查**：先看仓库结构，不直接写模板。
 2. **初始化**：创建或合并必要的接力文件和项目规则。
 3. **维护**：任务过程中持续记录目标、决策、活跃文件、验证和风险。
-4. **收尾**：非纯聊天任务结束前，主动刷新 `AGENT_HANDOFF.md` 或相关 `.agent-handoff/` 文件。
+4. **收尾**：非纯聊天任务结束前，主动刷新 `.agent-handoff/README.md` 或相关 `.agent-handoff/` 文件。
 5. **恢复**：下一位 Agent 从接力文档恢复状态，再按需读取源码。
 
-这个闭环的重点不是让 Agent 少读源码，而是让 Agent 少读无关历史。`AGENT_HANDOFF.md` 只负责告诉下一位 Agent “从哪里开始读”，具体实现仍然必须从源码和测试中验证。
+这个闭环的重点不是让 Agent 少读源码，而是让 Agent 少读无关历史。`.agent-handoff/README.md` 只负责告诉下一位 Agent “从哪里开始读”，具体实现仍然必须从源码和测试中验证。
 
 多文档模式下，恢复读取顺序是：
 
-1. `AGENT_HANDOFF.md`
+1. `.agent-handoff/README.md`
 2. `.agent-handoff/snapshot.md`
 3. `.agent-handoff/risks.md`
 4. `.agent-handoff/backlog.md`
@@ -109,7 +109,7 @@
 使用 agent-handoff skill，为当前项目初始化接力机制。
 ```
 
-它会检查仓库结构，创建 `AGENT_HANDOFF.md`，并按平台把持久接力规则合并到：
+它会检查仓库结构，创建 `.agent-handoff/README.md`，并按平台把持久接力规则合并到：
 
 - Codex：`AGENTS.md`
 - Claude Code：`.claude/CLAUDE.md`
@@ -130,7 +130,7 @@
 - 第三天补前端和测试。
 - 第四天修验证失败和边界条件。
 
-如果没有接力机制，新 Agent 只能靠旧聊天恢复上下文。`AGENT_HANDOFF.md` 则会明确记录：
+如果没有接力机制，新 Agent 只能靠旧聊天恢复上下文。`.agent-handoff/README.md` 则会明确记录：
 
 - 当前目标是什么。
 - 哪些文件正在修改。
@@ -142,20 +142,20 @@
 继续任务时可以说：
 
 ```text
-请读取 AGENT_HANDOFF.md，接着完成当前任务。
+请读取 .agent-handoff/README.md，接着完成当前任务。
 ```
 
 如果你遇到过 `Continue from where you left off.` 后 Agent 输出 `No response requested.` 或静默停止，可以使用更明确的继续提示：
 
 ```text
-继续刚才的任务。不要回复 No response requested，也不要静默停止。请先说明你认为上一轮做到哪里、下一步具体动作是什么，然后继续执行。如果上下文不足，请读取 AGENT_HANDOFF.md 和必要的接力文件恢复状态。
+继续刚才的任务。不要回复 No response requested，也不要静默停止。请先说明你认为上一轮做到哪里、下一步具体动作是什么，然后继续执行。如果上下文不足，请读取 .agent-handoff/README.md 和必要的接力文件恢复状态。
 ```
 
 ### 3. Agent 更换或上下文压缩后恢复
 
 当会话上下文被压缩，或者换了新的 Agent，最危险的是“看起来知道项目，实际上缺少关键状态”。这个 skill 的规则会要求新 Agent：
 
-1. 先读取 `AGENT_HANDOFF.md`。
+1. 先读取 `.agent-handoff/README.md`。
 2. 明确当前目标、状态、下一步和阻塞点。
 3. 只读取当前任务相关的源码。
 4. 不把接力文档当作源码事实的替代品。
@@ -179,7 +179,7 @@
 这时可以用：
 
 ```text
-使用 agent-handoff skill，审查并修复当前项目的 AGENT_HANDOFF.md。
+使用 agent-handoff skill，审查并修复当前项目的 .agent-handoff/README.md。
 ```
 
 skill 会参考 `references/quality.md`，把文档重新整理成可接手的操作状态。
@@ -259,7 +259,7 @@ python scripts\bootstrap_handoff.py --repo E:\path\to\your\repo --platform both 
 | `--platform codex\|claude\|both` | 项目规则目标。`codex` 更新 `AGENTS.md`，`claude` 更新 `.claude/CLAUDE.md`，`both` 同时更新两者。 |
 | `--layout single\|multi` | 接力结构。`multi` 是默认推荐模式；`single` 保留旧版单文档结构。 |
 | `--session-prompts` | 如果缺失则创建 `AGENT_SESSION_PROMPTS.md`。 |
-| `--gitignore` | 把 `AGENT_HANDOFF.md` 和 `AGENT_SESSION_PROMPTS.md` 加入 `.gitignore`。 |
+| `--gitignore` | 把 `.agent-handoff/README.md` 和 `AGENT_SESSION_PROMPTS.md` 加入 `.gitignore`。 |
 | `--allow-readonly` | Claude Code 专用：合并安全只读查询权限到 `.claude/settings.json`。 |
 | `--install-hooks` | Claude Code 专用：安装可选软提醒 hook，并把缺失 hook 条目合并到 `.claude/settings.json`。 |
 | `--dry-run` | 只显示计划改动，不写入文件。 |
@@ -288,7 +288,7 @@ Agent 应该做：
 
 1. 检查项目结构。
 2. 查找已有 `CLAUDE.md`、`AGENTS.md`、`.claude/CLAUDE.md`。
-3. 创建或更新 `AGENT_HANDOFF.md`。
+3. 创建或更新 `.agent-handoff/README.md`。
 4. 幂等合并 Codex `AGENTS.md` 的 handoff 区块。
 5. 幂等合并 Claude Code `.claude/CLAUDE.md` 的 handoff 区块。
 6. 可选创建 `AGENT_SESSION_PROMPTS.md`。
@@ -300,13 +300,13 @@ Agent 应该做：
 用户：
 
 ```text
-使用 agent-handoff skill，修复 AGENT_HANDOFF.md。它现在太长，而且状态有点乱。
+使用 agent-handoff skill，修复 .agent-handoff/README.md。它现在太长，而且状态有点乱。
 ```
 
 Agent 应该做：
 
 1. 读取 `references/quality.md`。
-2. 读取当前 `AGENT_HANDOFF.md`。
+2. 读取当前 `.agent-handoff/README.md`。
 3. 检查与仓库事实冲突的内容。
 4. 压缩陈旧历史。
 5. 刷新快照、工作日志、验证历史和待办。
@@ -348,7 +348,7 @@ python scripts\bootstrap_handoff.py --repo . --install-hooks --dry-run
 python scripts\bootstrap_handoff.py --repo . --install-hooks
 ```
 
-这会创建 `.claude/hooks/handoff-watch.mjs`，并把 `SessionStart`、`UserPromptSubmit`、`PreCompact`、`Stop`、`SubagentStop`、`SessionEnd` 的缺失 hook 条目合并进 `.claude/settings.json`。该 hook 是事件感知的软提醒：启动时注入接力健康状态和恢复阅读顺序；用户说 `continue`、`resume`、`handoff`、`compact`、`closeout` 等相关内容时补充上下文；压缩前和收尾前提醒更新接力文档。它始终返回 `continue: true`，不返回 `decision: "block"` 或 `continue: false`，不写接力文件，不会因为 `AGENT_HANDOFF.md` 缺失或脚本检查异常而终止会话。
+这会创建 `.claude/hooks/handoff-watch.mjs`，并把 `SessionStart`、`UserPromptSubmit`、`PreCompact`、`Stop`、`SubagentStop`、`SessionEnd` 的缺失 hook 条目合并进 `.claude/settings.json`。该 hook 是事件感知的软提醒：启动时注入接力健康状态和恢复阅读顺序；用户说 `continue`、`resume`、`handoff`、`compact`、`closeout` 等相关内容时补充上下文；压缩前和收尾前提醒更新接力文档。它始终返回 `continue: true`，不返回 `decision: "block"` 或 `continue: false`，不写接力文件，不会因为 `.agent-handoff/README.md` 缺失或脚本检查异常而终止会话。
 
 ## 目录结构
 
@@ -380,8 +380,8 @@ agent-handoff/
 多文档模式会在目标项目中创建：
 
 ```text
-AGENT_HANDOFF.md
 .agent-handoff/
+  README.md
   snapshot.md
   workspace.md
   decisions.md
@@ -395,7 +395,7 @@ AGENT_HANDOFF.md
 各部分职责：
 
 - `SKILL.md`：运行时入口。越短越好，只放触发说明、核心流程、资源导航和边界。
-- `references/templates.md`：`AGENT_HANDOFF.md` 和 `AGENT_SESSION_PROMPTS.md` 模板。
+- `references/templates.md`：`.agent-handoff/README.md` 和 `AGENT_SESSION_PROMPTS.md` 模板。
 - `references/codex-rules.md`：Codex `AGENTS.md` handoff 规则区块。
 - `references/claude-rules.md`：Claude Code `.claude/CLAUDE.md` handoff 规则区块。
 - `references/hooks.md`：可选 Claude Code 事件感知 hook 说明，必须始终以 `0` 退出，不返回 `decision: "block"` 或 `continue: false`，不写接力文件，不应阻断或关闭会话。
@@ -425,7 +425,7 @@ AGENT_HANDOFF.md
 
 ### 2. 状态比历史更重要
 
-`AGENT_HANDOFF.md` 不是聊天记录。它应该优先回答：
+`.agent-handoff/README.md` 不是聊天记录。它应该优先回答：
 
 - 当前目标是什么？
 - 当前状态是什么？
@@ -453,7 +453,7 @@ AGENT_HANDOFF.md
 
 ## 质量清单
 
-一个好的 `AGENT_HANDOFF.md` 应该满足：
+一个好的 `.agent-handoff/README.md` 应该满足：
 
 - 新 Agent 能快速知道当前目标和下一步。
 - 文件路径能从仓库根目录定位。
@@ -466,7 +466,7 @@ AGENT_HANDOFF.md
 
 多文档模式还必须满足：
 
-- `AGENT_HANDOFF.md` 只是索引和读取路线，不堆任务日志。
+- `.agent-handoff/README.md` 只是索引和读取路线，不堆任务日志。
 - `snapshot.md` 足够短，能说明当前目标、状态、下一步、活跃文件、阻塞点。
 - `risks.md` 包含所有仍有效的风险、阻塞和 `UNKNOWN`。
 - `backlog.md` 是可执行待办，不保留已完成旧项。
@@ -476,11 +476,11 @@ AGENT_HANDOFF.md
 
 ## 注意事项
 
-- 如果项目决定把 `AGENT_HANDOFF.md` 提交进 Git，应谨慎记录内容，避免私密上下文、路径、日志或内部信息泄露。
+- 如果项目决定把 `.agent-handoff/README.md` 提交进 Git，应谨慎记录内容，避免私密上下文、路径、日志或内部信息泄露。
 - 如果项目把接力文档放进 `.gitignore`，要确保团队知道它是本地状态文件。
 - hook 只是可选增强，不应该替代 Agent 自己的 closeout 责任；默认初始化不会安装 hook，只有显式使用 `--install-hooks` 才会写入 `.claude/hooks/handoff-watch.mjs` 并合并 `.claude/settings.json`。当前 hook 覆盖 `SessionStart`、`UserPromptSubmit`、`PreCompact`、`Stop`、`SubagentStop`、`SessionEnd`，只输出软上下文或软提醒。
 - 如果目标项目已有无 Agent handoff marker 的 `.claude/hooks/handoff-watch.mjs`，脚本会保留它且不会自动把 settings 指向该未知脚本，避免误接入可能阻断会话的自定义 hook。
-- `bootstrap_handoff.py` 不会覆盖已有 `AGENT_HANDOFF.md`，因为已有接力状态必须由 Agent 基于仓库事实修复。
+- `bootstrap_handoff.py` 不会覆盖已有 `.agent-handoff/README.md`，因为已有接力状态必须由 Agent 基于仓库事实修复。
 
 ## 许可证
 

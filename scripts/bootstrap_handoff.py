@@ -1,13 +1,13 @@
 #!/usr/bin/env python3
-"""引导创建仓库本地 Agent handoff 文件。
+"""引导创建 Agent handoff 文件。
 
 此脚本刻意保持保守:
 - 仅在 handoff 文件缺失时创建。
 - 支持两种布局:
   - single: 旧版单文件 AGENT_HANDOFF.md
-  - multi: 以 AGENT_HANDOFF.md 作为索引，并使用 .agent-handoff/*.md 状态文件
-- 在 Codex 的 AGENTS.md 中创建或更新带标记的 handoff 协议块。
-- 在 Claude Code 的 .claude/CLAUDE.md 中创建或更新带标记的 handoff 协议块。
+  - multi: 以 .agent-handoff/README.md 作为索引，并按需使用 .agent-handoff/*.md 状态文件
+- 检测 System Harness，并将 handoff 写入外层 Harness 根目录。
+- 在 Agent 规则入口中只创建或更新一条带标记的 handoff 引用。
 - 不覆盖现有 handoff 状态。
 """
 
@@ -205,11 +205,6 @@ def multi_index_template(repo: Path) -> str:
 - 风险来源: `.agent-handoff/risks.md`
 - 积压来源: `.agent-handoff/backlog.md`
 
-## 项目规则目标
-
-- Codex 项目规则: `AGENTS.md`
-- Claude Code 项目规则: `.claude/CLAUDE.md`
-
 ## 收尾规则
 
 对非平凡工作，在最终回复前更新相关文件:
@@ -236,17 +231,15 @@ def multi_snapshot_template(repo: Path) -> str:
 - 立即下一步:
   - 检查仓库特定文件，并用已验证事实替换 `UNKNOWN` 条目。
 - 活跃文件:
-  - `AGENT_HANDOFF.md`
+  - `.agent-handoff/README.md`
   - `.agent-handoff/snapshot.md`
-  - `AGENTS.md`
-  - `.claude/CLAUDE.md`
 - 阻塞项: 无
 - 待确认问题:
   - 确认 handoff 文件应提交还是仅保留在本地。
 
 ## 恢复摘要
 
-- 使用 `AGENT_HANDOFF.md` 作为索引。
+- 使用 `.agent-handoff/README.md` 作为唯一入口。
 - 从这里了解当前目标和下一步行动。
 - 不要将此文件视为源代码检查的替代品。
 """
@@ -258,7 +251,7 @@ def multi_workspace_template() -> str:
 ## 仓库结构
 
 - `.`: 仓库根目录。
-- `AGENT_HANDOFF.md`: handoff 索引和恢复路径。
+- `.agent-handoff/README.md`: handoff 唯一入口和恢复路径。
 - `.agent-handoff/`: 持久化 handoff 状态文件。
 
 ## 主要入口
@@ -308,10 +301,9 @@ def multi_work_log_template() -> str:
 
 - 目标: 建立持久化多文档 Agent handoff 机制。
 - 已变更文件:
-  - `AGENT_HANDOFF.md`: 已创建 handoff 索引。
+  - `.agent-handoff/README.md`: 已创建 handoff 索引。
   - `.agent-handoff/`: 已创建结构化 handoff 状态文件。
-  - `AGENTS.md`: 如已启用，已创建或更新 Codex 项目级 handoff 规则。
-  - `.claude/CLAUDE.md`: 如已启用，已创建或更新 Claude Code 项目级 handoff 规则。
+  - Agent 规则入口: 如已启用，仅创建或更新 handoff 引用。
 - 结果: 已搭建初始多文档 handoff 机制。
 - 剩余风险: 在检查源文件前，仓库特定上下文仍包含 `UNKNOWN`。
 
@@ -394,17 +386,17 @@ def common_rule_body(layout: str) -> str:
     if layout == "multi":
         startup = """制定计划或编辑文件前，读取:
 
-1. `AGENT_HANDOFF.md`
+1. `.agent-handoff/README.md`
 2. `.agent-handoff/snapshot.md`
 3. `.agent-handoff/risks.md`
 4. `.agent-handoff/backlog.md`
-5. 仅在当前任务需要时，根据 `AGENT_HANDOFF.md` 中的恢复阅读顺序读取其他 `.agent-handoff/` 文件
+5. 仅在当前任务需要时，根据 `.agent-handoff/README.md` 中的恢复阅读顺序读取其他 `.agent-handoff/` 文件
 6. 与用户当前请求直接相关的源文件
 
 将 handoff 文件作为连续性记忆，但在改变行为前从源文件验证实现细节。"""
         memory = """此仓库使用多文档持久化 handoff 记忆:
 
-- `AGENT_HANDOFF.md`: 索引和恢复路径
+- `.agent-handoff/README.md`: 唯一入口和恢复路径
 - `.agent-handoff/snapshot.md`: 当前目标、状态、下一步、活跃文件、阻塞项和待确认问题
 - `.agent-handoff/workspace.md`: 仓库地图、入口点、命令和稳定上下文
 - `.agent-handoff/decisions.md`: 包含原因和证据的持久化决策
@@ -414,8 +406,8 @@ def common_rule_body(layout: str) -> str:
 - `.agent-handoff/risks.md`: 风险、阻塞项、未知项和确认项
 - `.agent-handoff/archive.md`: 压缩旧历史
 
-维护最小的相关文件。不要将所有状态放入 `AGENT_HANDOFF.md`; 它是索引。"""
-        size = """- 保持 `AGENT_HANDOFF.md` 简短；它是索引。
+维护最小的相关文件。不要将所有状态放入 `.agent-handoff/README.md`; 它是入口索引。"""
+        size = """- 保持 `.agent-handoff/README.md` 简短；它是入口索引。
 - 保持 `.agent-handoff/snapshot.md` 简短、当前且面向行动。
 - 在 `.agent-handoff/work-log.md` 中只保留近期且仍相关的工作。
 - 优先更新现有条目，而不是追加重复或矛盾记录。
@@ -526,14 +518,10 @@ def common_rule_body(layout: str) -> str:
 
 
 def rule_block(platform: str, layout: str) -> str:
-    title = "Codex Agent Handoff 协议" if platform == "codex" else "Claude Code Agent Handoff 协议"
-    layout_label = "multi-document" if layout == "multi" else "single-document"
+    del platform
+    entry = ".agent-handoff/README.md" if layout == "multi" else "AGENT_HANDOFF.md"
     return f"""{START}
-# {title}
-
-布局: {layout_label}
-
-{common_rule_body(layout)}
+跨会话恢复与阶段收口时，按需遵循 `{entry}`。不要将 handoff 实现细节复制到本规则入口。
 {END}
 """
 
@@ -791,7 +779,7 @@ def create_single_layout(repo: Path, dry_run: bool, changed: list[str], notes: l
 
 def create_multi_layout(repo: Path, dry_run: bool, changed: list[str], notes: list[str]) -> None:
     handoff_dir = repo / ".agent-handoff"
-    create_if_missing(repo / "AGENT_HANDOFF.md", multi_index_template(repo), dry_run, changed, notes)
+    create_if_missing(handoff_dir / "README.md", multi_index_template(repo), dry_run, changed, notes)
     create_if_missing(handoff_dir / "snapshot.md", multi_snapshot_template(repo), dry_run, changed, notes)
     create_if_missing(handoff_dir / "workspace.md", multi_workspace_template(), dry_run, changed, notes)
     create_if_missing(handoff_dir / "decisions.md", multi_decisions_template(), dry_run, changed, notes)
@@ -802,8 +790,20 @@ def create_multi_layout(repo: Path, dry_run: bool, changed: list[str], notes: li
     create_if_missing(handoff_dir / "archive.md", multi_archive_template(), dry_run, changed, notes)
 
 
+def is_harness_root(path: Path) -> bool:
+    return (path / "AGENTS.md").is_file() and (path / "harness" / "directory-contract.md").is_file()
+
+
+def find_harness_root(path: Path) -> Path | None:
+    current = path.resolve()
+    for candidate in (current, *current.parents):
+        if is_harness_root(candidate):
+            return candidate
+    return None
+
+
 def main() -> int:
-    parser = argparse.ArgumentParser(description="为仓库引导创建 Agent handoff 文件。")
+    parser = argparse.ArgumentParser(description="为普通仓库或 System Harness 引导创建 Agent handoff 文件。")
     parser.add_argument("--repo", default=".", help="仓库根目录。默认为当前目录。")
     parser.add_argument(
         "--platform",
@@ -815,7 +815,13 @@ def main() -> int:
         "--layout",
         choices=["single", "multi"],
         default="multi",
-        help="Handoff 布局: single 创建旧版 AGENT_HANDOFF.md, multi 创建 AGENT_HANDOFF.md 以及 .agent-handoff/*.md。",
+        help="Handoff 布局: single 创建旧版 AGENT_HANDOFF.md, multi 创建 .agent-handoff/README.md 以及状态文件。",
+    )
+    parser.add_argument(
+        "--scope",
+        choices=["auto", "standalone", "harness"],
+        default="auto",
+        help="目标范围: auto 自动使用已检测到的外层 Harness, standalone 使用 --repo, harness 要求检测到 Harness。",
     )
     parser.add_argument("--session-prompts", action="store_true", help="缺少 AGENT_SESSION_PROMPTS.md 时创建该文件。")
     parser.add_argument("--gitignore", action="store_true", help="缺少条目时，将本地 handoff 文件加入 .gitignore。")
@@ -826,9 +832,13 @@ def main() -> int:
     parser.add_argument("--dry-run", action="store_true", help="打印计划变更，但不写入文件。")
     args = parser.parse_args()
 
-    repo = Path(args.repo).expanduser().resolve()
-    if not repo.exists() or not repo.is_dir():
-        raise SystemExit(f"仓库路径不是目录: {repo}")
+    requested_root = Path(args.repo).expanduser().resolve()
+    if not requested_root.exists() or not requested_root.is_dir():
+        raise SystemExit(f"目标路径不是目录: {requested_root}")
+    harness_root = find_harness_root(requested_root)
+    if args.scope == "harness" and harness_root is None:
+        raise SystemExit(f"未从目标路径检测到 System Harness: {requested_root}")
+    repo = harness_root if args.scope != "standalone" and harness_root else requested_root
 
     changed: list[str] = []
     notes: list[str] = []
@@ -856,9 +866,11 @@ def main() -> int:
         create_if_missing(prompts, session_prompts(args.layout), args.dry_run, changed, notes)
 
     if args.gitignore:
-        entries = ["AGENT_HANDOFF.md", "AGENT_SESSION_PROMPTS.md"]
+        entries = ["AGENT_SESSION_PROMPTS.md"]
         if args.layout == "multi":
             entries.append(".agent-handoff/")
+        else:
+            entries.append("AGENT_HANDOFF.md")
         add_gitignore_entries(repo, entries, args.dry_run, changed)
 
     if args.allow_readonly:
@@ -869,6 +881,8 @@ def main() -> int:
 
     mode = "DRY RUN" if args.dry_run else "UPDATED"
     print(f"{mode}: {repo}")
+    print(f"请求路径: {requested_root}")
+    print(f"范围: {'harness' if harness_root and repo == harness_root else 'standalone'}")
     print(f"布局: {args.layout}")
     print(f"平台规则: {args.platform}")
     if changed:

@@ -67,20 +67,19 @@ python <skill-dir>/scripts/bootstrap_handoff.py --repo <repo-root> --install-hoo
 | `SubagentStop` | 与 `Stop` 相同的收尾提醒行为，并带有 stop-loop 抑制。 |
 | `SessionEnd` | 输出安静的会话结束摘要。 |
 
-## 检查
+##
 
 通用检查：
 
-- `AGENT_HANDOFF.md` 存在。
-- `AGENT_HANDOFF.md` 未超过配置的陈旧阈值。
+- `.agent-handoff/README.md` 存在（多文档布局）或 `AGENT_HANDOFF.md` 存在（单文档布局）。
+- 入口文件未超过配置的陈旧阈值。
 - Claude Code hook stdin JSON 可被解析。
 
 多文档布局检查：
 
 - `.agent-handoff/` 存在。
-- 预期文件存在：`snapshot.md`、`workspace.md`、`decisions.md`、`work-log.md`、`validation.md`、`backlog.md`、`risks.md`、`archive.md`。
-- `AGENT_HANDOFF.md` 包含 `## 恢复阅读顺序`。
-- `AGENT_HANDOFF.md` 包含 `## Handoff 布局`。
+- `.agent-handoff/README.md` 包含 `## 恢复阅读顺序`。
+- `.agent-handoff/README.md` 包含 `## Handoff 布局`。
 - 当 snapshot 文件存在时，`.agent-handoff/snapshot.md` 包含 `## 当前状态`。
 
 单文档布局检查：

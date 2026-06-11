@@ -3,6 +3,7 @@
 import fs from "node:fs";
 import path from "node:path";
 
+const MULTI_INDEX = ".agent-handoff/README.md";
 const MULTI_FILES = [
   "snapshot.md",
   "workspace.md",
@@ -126,15 +127,22 @@ function containsAny(text, terms) {
 }
 
 function buildHealth(projectDir, maxAgeMinutes, parseWarning) {
-  const handoffPath = path.join(projectDir, "AGENT_HANDOFF.md");
+  const singlePath = path.join(projectDir, "AGENT_HANDOFF.md");
+  const multiIndexPath = path.join(projectDir, MULTI_INDEX);
   const handoffDir = path.join(projectDir, ".agent-handoff");
-  const content = exists(handoffPath) ? readSmallText(handoffPath) : "";
+  const singleExists = exists(singlePath);
+  const multiIndexExists = exists(multiIndexPath);
+  const content = multiIndexExists
+    ? readSmallText(multiIndexPath)
+    : singleExists
+      ? readSmallText(singlePath)
+      : "";
   const health = {
     projectDir,
     layout: "missing",
-    handoffPath,
+    handoffPath: multiIndexExists ? multiIndexPath : singlePath,
     handoffDir,
-    ageMinutes: exists(handoffPath) ? ageMinutes(handoffPath) : null,
+    ageMinutes: null,
     critical: [],
     warnings: [],
     missing: []
@@ -142,12 +150,15 @@ function buildHealth(projectDir, maxAgeMinutes, parseWarning) {
 
   if (parseWarning) health.warnings.push(parseWarning);
 
-  if (!exists(handoffPath)) {
-    health.critical.push("缺少 AGENT_HANDOFF.md。");
+  if (!singleExists && !multiIndexExists) {
+    health.critical.push("缺少 .agent-handoff 和 AGENT_HANDOFF.md。");
     return health;
   }
 
-  if (isDirectory(handoffDir)) {
+  const activePath = multiIndexExists ? multiIndexPath : singlePath;
+  health.ageMinutes = ageMinutes(activePath);
+
+  if (isDirectory(handoffDir) && multiIndexExists) {
     health.layout = "multi";
 
     for (const rel of MULTI_FILES) {
@@ -158,12 +169,12 @@ function buildHealth(projectDir, maxAgeMinutes, parseWarning) {
 
     if (!content.includes("## 恢复阅读顺序")) {
       health.critical.push(
-        "多文档布局已存在，但 AGENT_HANDOFF.md 不包含 '## 恢复阅读顺序'。"
+        "多文档布局已存在，但 .agent-handoff/README.md 不包含 '## 恢复阅读顺序'。"
       );
     }
 
     if (!content.includes("## Handoff 布局")) {
-      health.warnings.push("AGENT_HANDOFF.md 不包含 '## Handoff 布局'。");
+      health.warnings.push(".agent-handoff/README.md 不包含 '## Handoff 布局'。");
     }
 
     const snapshot = readSmallText(path.join(handoffDir, "snapshot.md"));
@@ -196,7 +207,7 @@ function buildHealth(projectDir, maxAgeMinutes, parseWarning) {
 function recoveryHint(health) {
   if (health.layout === "multi") {
     return [
-      "先读取 AGENT_HANDOFF.md。",
+      "先读取 .agent-handoff/README.md。",
       "然后读取 .agent-handoff/snapshot.md、.agent-handoff/risks.md 和 .agent-handoff/backlog.md。",
       "仅在与任务相关时读取 validation、decisions、workspace、work-log 和 archive。"
     ].join(" ");
@@ -206,7 +217,7 @@ function recoveryHint(health) {
     return "先读取 AGENT_HANDOFF.md，然后只检查与任务相关的源文件。";
   }
 
-  return "依赖仓库 handoff 记忆前，先创建或修复 AGENT_HANDOFF.md。";
+  return "依赖仓库 handoff 记忆前，先创建或修复 .agent-handoff/README.md 或 AGENT_HANDOFF.md。";
 }
 
 function healthSummary(health) {

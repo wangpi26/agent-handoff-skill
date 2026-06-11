@@ -6,7 +6,7 @@
 
 ## 布局
 
-- `multi`: 真实项目的推荐默认布局。`AGENT_HANDOFF.md` 是简短索引，`.agent-handoff/*.md` 按类别存储状态。
+- `multi`: 真实项目的推荐默认布局。`.agent-handoff/README.md` 是唯一入口，`.agent-handoff/*.md` 按类别存储状态。
 - `single`: 适用于小项目的旧版紧凑布局。`AGENT_HANDOFF.md` 存储全部状态。
 
 不要强制迁移已有的 `AGENT_HANDOFF.md`。保留它，并在需要时基于仓库事实手动迁移。
@@ -14,8 +14,8 @@
 ## 多文档布局
 
 ```text
-AGENT_HANDOFF.md
 .agent-handoff/
+  README.md
   snapshot.md
   workspace.md
   decisions.md
@@ -26,7 +26,7 @@ AGENT_HANDOFF.md
   archive.md
 ```
 
-### AGENT_HANDOFF.md
+### .agent-handoff/README.md
 
 ```markdown
 # Agent Handoff 索引
@@ -74,6 +74,16 @@ AGENT_HANDOFF.md
 - 主要下一步来源: `.agent-handoff/snapshot.md`
 - 风险来源: `.agent-handoff/risks.md`
 - 积压来源: `.agent-handoff/backlog.md`
+
+## 收尾规则
+
+对非平凡工作，在最终回复前更新相关文件:
+
+- 始终更新 `.agent-handoff/snapshot.md`。
+- 当文件或任务状态变化时，更新 `.agent-handoff/work-log.md`。
+- 当运行检查或有意跳过检查时，更新 `.agent-handoff/validation.md`。
+- 当作出持久化决策时，更新 `.agent-handoff/decisions.md`。
+- 当后续事项、阻塞项、风险或未知项变化时，更新 `.agent-handoff/backlog.md` 和 `.agent-handoff/risks.md`。
 ```
 
 ### .agent-handoff/snapshot.md
@@ -98,7 +108,9 @@ AGENT_HANDOFF.md
 
 ## 恢复摘要
 
-- <one to three bullets with the most important context needed to resume>
+- 使用 `.agent-handoff/README.md` 作为唯一入口。
+- 从这里了解当前目标和下一步行动。
+- 不要将此文件视为源代码检查的替代品。
 ```
 
 ### .agent-handoff/workspace.md
@@ -285,10 +297,10 @@ AGENT_HANDOFF.md
 
 ## AGENT_SESSION_PROMPTS.md
 
-使用与所选布局匹配的 prompt。对于多文档布局，将 `AGENT_HANDOFF.md` 以及 `.agent-handoff/snapshot.md`、`.agent-handoff/risks.md`、`.agent-handoff/backlog.md` 说明为必读启动集合。
+使用与所选布局匹配的 prompt。对于多文档布局，将 `.agent-handoff/README.md` 以及 `.agent-handoff/snapshot.md`、`.agent-handoff/risks.md`、`.agent-handoff/backlog.md` 说明为必读启动集合。
 
 对于续接 prompt，加入明确的 anti-noop guard，避免 agent 将 `continue` 当作无需回复的请求：
 
 ```text
-将此视为继续执行的明确请求。不要回答 "No response requested."。先说明你认为上一轮做到哪里，识别下一项具体行动，然后继续。如果上下文不足，请先从 AGENT_HANDOFF.md 和必需的 handoff 文件恢复，再行动。
+将此视为继续执行的明确请求。不要回答 "No response requested."。先说明你认为上一轮做到哪里，识别下一项具体行动，然后继续。如果上下文不足，请先从 .agent-handoff/README.md 和必需的 handoff 文件恢复，再行动。
 ```
