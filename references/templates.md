@@ -43,6 +43,16 @@
 - 不要包含密钥、凭据、长日志、完整代码块或聊天记录转储。
 - 对任何非平凡任务，在最终回复前更新相关 `.agent-handoff/` 文件。
 
+## 当前执行方案恢复契约
+
+1. 从 `.agent-handoff/snapshot.md` 读取 `当前执行方案`。只允许一个具备覆盖权的主方案；辅助文档只提供操作细节。
+2. 状态为 `active` 时确认主方案仍存在且适用范围匹配；状态为 `unknown` 时，先搜索候选方案并询问用户；状态为 `none` 时不重复询问。
+3. 主方案覆盖 Skill 默认配置、推荐流程和辅助文档，但不能覆盖 Skill 中显式 `安全硬边界` 章节的规则。
+4. 未分类强制规则与主方案冲突时标记为 `unknown`，阻塞受影响操作并询问用户。主方案待确认项同样阻塞受影响操作。
+5. 动态冲突写入 `.agent-handoff/risks.md`；解决后移除活跃风险，将稳定结论回写主方案，重要裁决写入 `.agent-handoff/decisions.md`，Skill 或辅助文档改进候选写入 `.agent-handoff/backlog.md`。
+6. 主方案必须声明适用范围。目标超出范围或无法判断时，将状态切换为 `unknown`。
+7. Handoff 只维护主方案指针和少量当前执行状态，不复制方案中的配置、步骤或验收标准。在新会话恢复、目标变化、关键操作前、相关文件变化后或执行结果异常时重新核对主方案。
+
 ## Handoff 布局
 
 - `.agent-handoff/snapshot.md`: 当前目标、状态、下一步、活跃文件、阻塞项和待确认问题。
@@ -105,6 +115,15 @@
 - 阻塞项: <none or concrete blocker>
 - 待确认问题:
   - <none, UNKNOWN, or question needing user/source confirmation>
+
+## 当前执行方案
+
+- 状态: <active | none | unknown>
+- 主方案: <path | none | UNKNOWN>
+- 适用范围: <scope | none | UNKNOWN>
+- 辅助文档: <paths | none>
+- 最近核对: YYYY-MM-DD
+- 当前阶段: <brief current stage>
 
 ## 恢复摘要
 
@@ -229,6 +248,7 @@
 - 不要包含密钥、凭据、长命令日志、大段代码块或聊天记录转储。
 - 替换过时记录，不要累积相互矛盾的历史。
 - 将不确定内容标记为 `UNKNOWN`，并在需要时根据仓库证据解决。
+- 初始化或当前目标变化时，确认当前任务是否有主方案；脚本默认状态为 `unknown`，不得自动选择。
 
 ## Handoff 快照
 
@@ -244,6 +264,25 @@
 - 阻塞项: <none or concrete blocker>
 - 待确认问题:
   - <none, UNKNOWN, or question needing user/source confirmation>
+
+## 当前执行方案
+
+- 状态: <active | none | unknown>
+- 主方案: <path | none | UNKNOWN>
+- 适用范围: <scope | none | UNKNOWN>
+- 辅助文档: <paths | none>
+- 最近核对: YYYY-MM-DD
+- 当前阶段: <brief current stage>
+
+执行规则:
+
+1. 只允许一个具备覆盖权的主方案；辅助文档只提供操作细节。Handoff 不复制方案中的配置、步骤或验收标准。
+2. 主方案覆盖默认配置、推荐流程和辅助文档，但不能覆盖 Skill 中显式声明的安全硬边界。
+3. 未分类强制规则与主方案冲突时按 `unknown` 处理，阻塞受影响操作并询问用户。主方案待确认项同样阻塞受影响操作。
+4. 主方案与辅助文档冲突时，记录差异并按主方案执行。
+5. 动态冲突记录在风险/阻塞中；解决后移除活跃风险，将稳定结论回写主方案，重要裁决记录到决策日志，Skill 或辅助文档改进候选写入任务积压。
+6. 主方案必须声明适用范围。以用户当前明确目标保守判断；目标超出范围或无法判断时，将状态切换为 `unknown`。
+7. 在新会话恢复、目标变化、关键操作前、相关文件变化后或执行结果异常时重新核对主方案。
 
 ## 工作区地图
 

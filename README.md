@@ -85,6 +85,10 @@
 
 这个闭环的重点不是让 Agent 少读源码，而是让 Agent 少读无关历史。`.agent-handoff/README.md` 只负责告诉下一位 Agent "从哪里开始读"，具体实现仍然必须从源码和测试中验证。
 
+### 当前执行方案
+
+Handoff 会询问当前任务是否有设计方案、总纲或其他主方案，并在 snapshot 中使用 `active | none | unknown` 三态记录。只允许一个主方案具备覆盖权；它可以覆盖 Skill 默认配置、推荐流程和辅助文档，但不能覆盖具体 Skill 显式声明的安全硬边界。动态冲突写入 risks，稳定裁决回写主方案和 decisions，后续 Skill 或文档改进写入 backlog。
+
 多文档模式下,恢复读取顺序是:
 
 1. `.agent-handoff/README.md`
