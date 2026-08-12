@@ -1,6 +1,6 @@
 ---
 name: agent-handoff
-description: 用于创建、更新、修复或审查持久化仓库接力机制的跨平台 Codex 和 Claude Code skill。支持单文档和多文档布局。检测 System Harness 时自动将 handoff 状态写入外层根目录，且只在 Agent 规则入口维护一条引用。适用于用户要求引导跨会话项目记忆、创建或维护 .agent-handoff 状态文件、在 AGENTS.md 或 .claude/CLAUDE.md 添加 handoff 引用、安装可选 Claude Code 提醒 hook、强制收尾、修复过期接力状态或审查接力质量。Codex 使用时安装到 ~/.codex/skills/agent-handoff；Claude Code 个人使用时安装到 ~/.claude/skills/agent-handoff；Claude Code 项目使用时安装到 repo/.claude/skills/agent-handoff。
+description: 用于创建、更新、压缩、轮转、修复或审查持久化仓库接力机制的跨平台 Codex 和 Claude Code skill。支持单文档和多文档布局，具备有界快照与归档历史的容量治理。检测 System Harness 时自动将 handoff 状态写入外层根目录，且只在 Agent 规则入口维护一条引用。适用于用户要求引导跨会话项目记忆、创建或维护 .agent-handoff 状态文件、在 AGENTS.md 或 .claude/CLAUDE.md 添加 handoff 引用、安装可选 Claude Code 提醒 hook、强制收尾、修复过期接力状态或审查接力质量。Codex 使用时安装到 ~/.codex/skills/agent-handoff；Claude Code 个人使用时安装到 ~/.claude/skills/agent-handoff；Claude Code 项目使用时安装到 repo/.claude/skills/agent-handoff。
 ---
 
 # Agent Handoff
@@ -44,7 +44,8 @@ description: 用于创建、更新、修复或审查持久化仓库接力机制�
 5. 如果要修复或审查已有机制，先读取 `references/quality.md`，检查当前文件，然后直接用事实更新仓库文件。
 6. 始终保持接力内容有证据支撑。对无法从仓库或用户请求中验证的事实使用 `UNKNOWN`。
 7. 初始化或当前任务目标变化时，先搜索可能的主方案，再询问用户当前任务是否有设计方案、总纲或其他主方案。只有用户确认或文档明确标记为当前有效且适用范围匹配时，才可将方案状态设为 `active`。
-8. 报告完成前，重新读取已创建或修改的文件。
+8. `multi` 布局下，在有意义的 handoff 更新后、收尾前运行 `scripts/maintain_handoff.py --repo <repo-root> --compact-if-needed`。
+9. 报告完成前，重新读取已创建或修改的文件。
 
 ## 默认文件
 
@@ -102,6 +103,32 @@ python <skill-dir>/scripts/bootstrap_handoff.py --repo <repo-root> --platform bo
 
 运行脚本后，检查生成的文件，并尽可能用仓库事实替换占位符或 `UNKNOWN` 内容。
 
+## 维护脚本
+
+使用确定性维护脚本进行多文档容量治理：
+
+```bash
+python <skill-dir>/scripts/maintain_handoff.py --repo <repo-root> --check
+python <skill-dir>/scripts/maintain_handoff.py --repo <repo-root> --compact-if-needed
+python <skill-dir>/scripts/maintain_handoff.py --repo <repo-root> --rotate
+```
+
+- `--check` 只读，报告软限告警或未解决的硬限问题。
+- `--compact-if-needed` 先归档再规范化超限且可解析的 snapshot，然后轮转超限的 work-log、validation 和已完成 backlog 记录。
+- `--rotate` 跳过 snapshot 压缩，只轮转合格的历史记录。
+- 永不重写无法解析的 snapshot；永不机械删除 risks；保留完整的 work-log 段落和 validation 表格行；`当前执行方案` 段在压缩中原样保留。
+- Claude hook 不运行此脚本，只报告容量告警，始终只读且不阻塞。
+
+容量策略：
+
+- snapshot 软限：`16 KiB` 或 `240` 行。
+- snapshot 硬限：`32 KiB` 或 `400` 行。
+- work-log：`64 KiB` 或 `30` 个日期段落。
+- validation 历史：`64 KiB` 或 `200` 行表格记录。
+- backlog 和 risks：各 `32 KiB`。
+- 生成的归档块：每块至多 `128 KiB`，存入 `.agent-handoff/archive/`。
+- 旧版 single 布局：`32 KiB` 软限、`64 KiB` 硬限；达到硬限时迁移到 multi 布局，而不是在文件内做复杂轮转。
+
 ## 多文档恢复契约
 
 在 `multi` 布局中，新 Agent 必须按以下顺序恢复：
@@ -116,7 +143,7 @@ python <skill-dir>/scripts/bootstrap_handoff.py --repo <repo-root> --platform bo
 8. 需要近期实现细节时读取 `.agent-handoff/work-log.md`
 9. 仅为旧上下文读取 `.agent-handoff/archive.md`
 
-`snapshot.md` 必须保持简短、面向行动。决策、验证、backlog、风险和历史应放入对应专用文件。
+`snapshot.md` 是原地替换的当前状态，不是追加式历史，必须保持简短、面向行动。决策、验证、backlog、风险和历史应放入对应专用文件。确定性规范化前先归档原文；无法安全解析时保留原文不动。
 
 ## 当前执行方案契约
 
@@ -153,10 +180,11 @@ python <skill-dir>/scripts/bootstrap_handoff.py --repo <repo-root> --platform bo
 - `references/quality.md`：审查、压缩、修复或验证接力机制时读取。
 - `templates/claude-settings-hooks.json`：Claude Code hook settings 片段，用于手动审查或安装。
 - `templates/handoff-watch.mjs`：Claude Code 事件感知提醒 hook 脚本模板。
+- `scripts/maintain_handoff.py`：跨平台只读检查，以及显式 snapshot 压缩和历史轮转。
 
 ## 收尾
 
-当此 skill 修改仓库文件时，报告：
+当此 skill 修改仓库文件时，收尾前运行 `scripts/maintain_handoff.py --repo <repo-root> --compact-if-needed` 并解决所有 `UNRESOLVED` 项，然后报告：
 
 - 创建或更新的文件。
 - 当前接力状态。

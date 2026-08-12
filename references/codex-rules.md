@@ -33,6 +33,10 @@ python <skill-dir>/scripts/bootstrap_handoff.py --repo <repo-root> --platform co
 
 详细恢复顺序、文件布局和维护规则由 `.agent-handoff/README.md` 自身承载。
 
+## 容量规则
+
+容量策略不写入规则入口，由 `.agent-handoff/README.md` 和维护脚本承载：snapshot 软限 `16 KiB / 240 行`、硬限 `32 KiB / 400 行`；work-log `64 KiB / 30` 个日期段落；validation `64 KiB / 200` 行；backlog 和 risks 各 `32 KiB`；归档块 `128 KiB`。handoff 更新后、收尾前，可用已安装 skill 的 `scripts/maintain_handoff.py --repo <repo> --compact-if-needed` 做确定性压缩与轮转。无法解析的状态保留原文，人工修复。
+
 ## 续接恢复保护
 
 如果用户说 `continue`、`继续`、`Continue from where you left off.` 或任何等价的续接请求，应将其视为恢复任务的明确指令。不要回答 `No response requested.`，也不要静默停止。先说明最后已知目标和下一个具体动作，然后继续。如果上下文不足，先从 handoff 文件和任务相关源文件恢复上下文，再行动。
@@ -64,7 +68,7 @@ python <skill-dir>/scripts/bootstrap_handoff.py --repo <repo-root> --platform co
 
 对于非平凡任务：
 
-- Multi layout: 最终回复前更新最小范围的相关 `.agent-handoff/` 文件。
+- Multi layout: 最终回复前更新最小范围的相关 `.agent-handoff/` 文件，并运行维护检查。
 - Single layout: 最终回复前更新 `AGENT_HANDOFF.md`。
 
 不要粘贴密钥、凭据、长日志、完整代码块或聊天记录转储。

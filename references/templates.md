@@ -24,6 +24,8 @@
   backlog.md
   risks.md
   archive.md
+  archive/
+    <轮转类型>-<时间戳>.md
 ```
 
 ### .agent-handoff/README.md
@@ -37,7 +39,7 @@
 ## 维护契约
 
 - 保持此文件简短。它是索引和恢复路径，不是工作日志。
-- 将当前任务状态存放在 `.agent-handoff/snapshot.md`。
+- 将当前任务状态存放在 `.agent-handoff/snapshot.md`；原地替换陈旧字段，不要追加历史快照。
 - 将持久化事实、决策、验证、积压、风险和归档存放在下列专用文件中。
 - 保持所有内容基于事实和仓库证据。将不确定内容标记为 `UNKNOWN`。
 - 不要包含密钥、凭据、长日志、完整代码块或聊天记录转储。
@@ -63,6 +65,15 @@
 - `.agent-handoff/backlog.md`: 待办工作和后续事项。
 - `.agent-handoff/risks.md`: 风险、阻塞项、未知项和所需的用户/来源确认。
 - `.agent-handoff/archive.md`: 压缩后的旧历史，不属于常规启动内容。
+- `.agent-handoff/archive/`: 自动轮转的历史块，每块不超过 128 KiB。
+
+## 容量与轮转策略
+
+- snapshot 软限 16 KiB 或 240 行；硬限 32 KiB 或 400 行。
+- work-log 上限 64 KiB 或 30 个日期段落；validation 上限 64 KiB 或 200 行表格记录。
+- backlog 和 risks 各 32 KiB。只有已完成 backlog 项可机械归档；risks 需要 Agent 语义化审查。
+- handoff 更新后，可用已安装 skill 的 `agent-handoff/scripts/maintain_handoff.py --repo <repo> --compact-if-needed` 做确定性维护。
+- 替换前先归档。无法解析或语义不安全的内容保留原文，交给 Agent 修复。
 
 ## 恢复阅读顺序
 
@@ -94,6 +105,7 @@
 - 当运行检查或有意跳过检查时，更新 `.agent-handoff/validation.md`。
 - 当作出持久化决策时，更新 `.agent-handoff/decisions.md`。
 - 当后续事项、阻塞项、风险或未知项变化时，更新 `.agent-handoff/backlog.md` 和 `.agent-handoff/risks.md`。
+- 运行 handoff 维护检查，并在最终回复前解决硬限问题。
 ```
 
 ### .agent-handoff/snapshot.md
@@ -129,6 +141,7 @@
 
 - 使用 `.agent-handoff/README.md` 作为唯一入口。
 - 从这里了解当前目标和下一步行动。
+- 更新时原地替换此当前状态快照；不要在此追加历史快照。
 - 不要将此文件视为源代码检查的替代品。
 ```
 
@@ -230,9 +243,24 @@
 此文件保存压缩后的旧历史，不属于常规启动内容。
 ```
 
+维护脚本将完整的轮转记录写入 `.agent-handoff/archive/` 并向 `archive.md` 添加链接，超大记录会拆分为不超过 `128 KiB` 的 UTF-8 安全块。
+
+## 多文档容量维护
+
+从此 skill 的 Codex 或 Claude Code 安装位置运行：
+
+```bash
+python <skill-dir>/scripts/maintain_handoff.py --repo <repo-root> --check
+python <skill-dir>/scripts/maintain_handoff.py --repo <repo-root> --compact-if-needed
+```
+
+第二条命令在替换 snapshot 前归档原文，只轮转完整的 work-log 段落和 validation 表格行，只归档已完成的 backlog 项；对 risks 或格式异常的状态报告人工修复，不做机械删除。
+
 ## 单文档布局
 
 仅用于小项目，或用户明确要求旧版单文件结构时使用。
+
+将 `32 KiB` 视为软限、`64 KiB` 视为硬限。达到硬限时迁移到 multi 布局；不要在旧版单文件内增加复杂的自动轮转。
 
 ````markdown
 # Agent Handoff

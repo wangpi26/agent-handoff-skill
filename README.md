@@ -89,6 +89,19 @@
 
 Handoff 会询问当前任务是否有设计方案、总纲或其他主方案，并在 snapshot 中使用 `active | none | unknown` 三态记录。只允许一个主方案具备覆盖权；它可以覆盖 Skill 默认配置、推荐流程和辅助文档，但不能覆盖具体 Skill 显式声明的安全硬边界。动态冲突写入 risks，稳定裁决回写主方案和 decisions，后续 Skill 或文档改进写入 backlog。
 
+### 容量治理
+
+接力文档不是无限生长的日志。多文档布局有明确的容量策略：snapshot 软限 `16 KiB / 240 行`、硬限 `32 KiB / 400 行`；work-log `64 KiB / 30` 个日期段落；validation `64 KiB / 200` 行；backlog 和 risks 各 `32 KiB`；自动归档块每块不超过 `128 KiB`，存放在 `.agent-handoff/archive/`。
+
+随附的确定性维护脚本负责检查、压缩和轮转：
+
+```bash
+python <skill-dir>/scripts/maintain_handoff.py --repo <repo-root> --check
+python <skill-dir>/scripts/maintain_handoff.py --repo <repo-root> --compact-if-needed
+```
+
+安全原则：替换前先归档原文；无法解析的 snapshot 保留原文并报告人工修复；risks 永不机械删除；`当前执行方案` 段在压缩中原样保留。可选 Claude hook 只报告容量告警，只读且不阻塞，绝不运行维护脚本。
+
 多文档模式下,恢复读取顺序是:
 
 1. `.agent-handoff/README.md`
@@ -379,6 +392,7 @@ agent-handoff/
     templates.md
   scripts/
     bootstrap_handoff.py
+    maintain_handoff.py
 ```
 
 多文档模式会在目标项目中创建:
@@ -407,6 +421,7 @@ agent-handoff/
 - `templates/handoff-watch.mjs`:Claude Code 事件感知接力提醒 hook 脚本模板。
 - `references/quality.md`:审查、修复、压缩接力文档时使用的质量标准。
 - `scripts/bootstrap_handoff.py`:保守的初始化脚本,负责创建缺失文件、多文档或单文档结构、幂等合并规则,并可按需安装 Claude Code 软提醒 hook。
+- `scripts/maintain_handoff.py`:确定性维护脚本,负责只读容量检查、超限 snapshot 压缩和 work-log/validation/backlog 历史轮转。
 - `README.md` / `README_en.md`:GitHub 展示文档,不参与 skill 运行。
 
 ## 设计原则

@@ -1,4 +1,4 @@
 interface:
   display_name: "Agent Handoff"
-  short_description: "创建 Agent handoff 状态和引用，支持普通仓库和 System Harness。"
-  default_prompt: "使用跨平台 agent-handoff skill，为此仓库创建或修复 .agent-handoff 状态、Codex AGENTS.md 引用和 Claude Code .claude/CLAUDE.md 引用。"
+  short_description: "创建 Agent handoff 状态和引用，支持普通仓库和 System Harness，含容量治理。"
+  default_prompt: "使用跨平台 agent-handoff skill，为此仓库创建、修复或压缩 .agent-handoff 状态、Codex AGENTS.md 引用和 Claude Code .claude/CLAUDE.md 引用。"

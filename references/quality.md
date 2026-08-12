@@ -8,7 +8,7 @@
 2. 会话启动，单文档布局：明确读取 `AGENT_HANDOFF.md`，判断当前活跃子项目，然后只检查与任务相关的源文件。
 3. 会话启动，多文档布局：读取 `.agent-handoff/README.md`、`.agent-handoff/snapshot.md`、`.agent-handoff/risks.md` 和 `.agent-handoff/backlog.md`；仅在需要时读取其他 handoff 文件。
 4. 工作期间：当目标/状态改变时更新 snapshot，记录决策及其原因和证据，出现阻塞和风险时记录它们；在关键节点重新核对当前主方案。
-5. 收尾：最终回复前更新工作日志、验证历史、后续步骤、风险、阻塞和陈旧状态。
+5. 收尾：最终回复前更新工作日志、验证历史、后续步骤、风险、阻塞和陈旧状态，然后运行随附的维护脚本。
 6. 审查/修复：移除矛盾、陈旧备注、聊天记录内容、长日志、密钥和无法验证的声明。
 
 ## 优秀的多文档 Handoff
@@ -22,6 +22,7 @@
 - `.agent-handoff/decisions.md` 包含带原因和证据的持久决策。
 - `.agent-handoff/workspace.md` 包含稳定的仓库地图和命令，而不是易变的任务状态。
 - 正常恢复不需要 `.agent-handoff/archive.md`。
+- 自动轮转的历史存放在 `.agent-handoff/archive/` 块中，每块不超过 128 KiB，不参与正常启动。
 - 必读启动集合足以恢复前一个 agent 正在做的工作。
 
 ## 优秀的 `AGENT_HANDOFF.md`（单文档布局）
@@ -33,8 +34,18 @@
 - 验证历史说明运行了什么、是否通过或失败，以及任何注意事项。
 - 未知项明确标记为 `UNKNOWN`。
 - 文档减少无关阅读，但不替代源代码验证。
-- Snapshot 简短且保持最新。
+- Snapshot 是原地替换的当前状态，尽可能保持在 16 KiB / 240 行以内，绝不默默涨过 32 KiB / 400 行。
 - 近期工作日志仍然相关；旧细节已压缩或归档。
+
+## 容量与轮转契约
+
+- snapshot：软限 `16 KiB` 或 `240` 行；硬限 `32 KiB` 或 `400` 行。
+- work-log：超过 `64 KiB` 或 `30` 个完整日期段落时轮转。
+- validation：超过 `64 KiB` 或 `200` 行完整表格记录时轮转。
+- backlog 和 risks：各 `32 KiB`。只有可机械识别的已完成 backlog 项可以归档；risks 需要语义化 Agent 审查。
+- 归档块：生成的文件每块不超过 `128 KiB`。
+- single 布局：超过 `32 KiB` 告警；超过 `64 KiB` 硬限时迁移到 multi 布局。
+- 压缩可解析的 snapshot 前先归档原文。解析失败时保留原文并报告未解决修复，不要猜测。
 
 ## 多文档恢复测试
 
@@ -82,4 +93,5 @@
 - 核对当前执行方案状态、适用范围和最近核对状态；状态为 `unknown` 时搜索候选方案并询问用户。
 - 确认主方案冲突遵循恢复契约：安全硬边界不可覆盖，未分类强制规则和主方案待确认项阻塞受影响操作。
 - 确认没有添加密钥、凭据、token 或私有日志。
+- 运行 `python <skill-dir>/scripts/maintain_handoff.py --repo <repo-root> --compact-if-needed` 并解决每个 `UNRESOLVED` 结果。
 - 报告完成前重新读取最终文档。

@@ -13,6 +13,7 @@
 - 永远不要返回 `decision: "block"`、`continue: false` 或 `decision: "approve"`。
 - 永远不要用 hook 失败来终止、阻塞或关闭 agent 会话。
 - 永远不要从 hook 写入 handoff 文件。
+- 永远不要从 hook 调用 `maintain_handoff.py`、Python 或任何其他会修改状态的维护命令。
 - 永远不要调用网络、安装依赖、删除文件、启动服务或修改项目状态。
 - 保留已有用户 hook 脚本，除非其中包含 Agent handoff hook 标记。
 
@@ -81,6 +82,8 @@ python <skill-dir>/scripts/bootstrap_handoff.py --repo <repo-root> --install-hoo
 - `.agent-handoff/README.md` 包含 `## 恢复阅读顺序`。
 - `.agent-handoff/README.md` 包含 `## Handoff 布局`。
 - 当 snapshot 文件存在时，`.agent-handoff/snapshot.md` 包含 `## 当前状态`。
+- snapshot 在 `16 KiB / 240 行` 软限和 `32 KiB / 400 行` 硬限时报告容量告警。
+- work-log（`64 KiB / 30` 段）、validation（`64 KiB / 200` 行）、backlog（`32 KiB`）、risks（`32 KiB`）超限时产生建议性告警。
 
 单文档布局检查：
 
@@ -88,6 +91,7 @@ python <skill-dir>/scripts/bootstrap_handoff.py --repo <repo-root> --install-hoo
 - `AGENT_HANDOFF.md` 包含 `## 当前工作日志`。
 - `AGENT_HANDOFF.md` 包含 `## 验证历史`。
 - `AGENT_HANDOFF.md` 包含 `## 任务积压`。
+- `AGENT_HANDOFF.md` 超过 `32 KiB` 软限时告警，超过 `64 KiB` 硬限时建议迁移到 multi 布局。
 
 ## 输出策略
 

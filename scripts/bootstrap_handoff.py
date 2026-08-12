@@ -193,7 +193,7 @@ def multi_index_template(repo: Path) -> str:
 ## 维护契约
 
 - 保持此文件简短。它是索引和恢复路径，不是工作日志。
-- 将当前任务状态存放在 `.agent-handoff/snapshot.md`。
+- 将当前任务状态存放在 `.agent-handoff/snapshot.md`；原地替换陈旧字段，不要追加历史快照。
 - 将持久化事实、决策、验证、积压、风险和归档存放在下列专用文件中。
 - 保持所有内容基于事实和仓库证据。将不确定内容标记为 `UNKNOWN`。
 - 不要包含密钥、凭据、长日志、完整代码块或聊天记录转储。
@@ -219,6 +219,15 @@ def multi_index_template(repo: Path) -> str:
 - `.agent-handoff/backlog.md`: 待办工作和后续事项。
 - `.agent-handoff/risks.md`: 风险、阻塞项、未知项和所需的用户/来源确认。
 - `.agent-handoff/archive.md`: 压缩后的旧历史，不属于常规启动内容。
+- `.agent-handoff/archive/`: 自动轮转的历史块，每块不超过 128 KiB。
+
+## 容量与轮转策略
+
+- snapshot 软限 16 KiB 或 240 行；硬限 32 KiB 或 400 行。
+- work-log 上限 64 KiB 或 30 个日期段落；validation 上限 64 KiB 或 200 行表格记录。
+- backlog 和 risks 各 32 KiB。只有已完成 backlog 项可机械归档；risks 需要 Agent 语义化审查。
+- handoff 更新后，可用已安装 skill 的 `agent-handoff/scripts/maintain_handoff.py --repo <repo> --compact-if-needed` 做确定性维护。
+- 替换前先归档；无法解析或语义不安全的内容保留原文，交给 Agent 修复。
 
 ## 恢复阅读顺序
 
@@ -250,6 +259,7 @@ def multi_index_template(repo: Path) -> str:
 - 当运行检查或有意跳过检查时，更新 `.agent-handoff/validation.md`。
 - 当作出持久化决策时，更新 `.agent-handoff/decisions.md`。
 - 当后续事项、阻塞项、风险或未知项变化时，更新 `.agent-handoff/backlog.md` 和 `.agent-handoff/risks.md`。
+- 运行 handoff 维护检查，并在最终回复前解决硬限问题。
 """
 
 
@@ -286,6 +296,7 @@ def multi_snapshot_template(repo: Path) -> str:
 
 - 使用 `.agent-handoff/README.md` 作为唯一入口。
 - 从这里了解当前目标和下一步行动。
+- 更新时原地替换此当前状态快照；不要在此追加历史快照。
 - 不要将此文件视为源代码检查的替代品。
 """
 
@@ -453,10 +464,13 @@ def common_rule_body(layout: str) -> str:
 
 维护最小的相关文件。不要将所有状态放入 `.agent-handoff/README.md`; 它是入口索引。"""
         size = """- 保持 `.agent-handoff/README.md` 简短；它是入口索引。
-- 保持 `.agent-handoff/snapshot.md` 简短、当前且面向行动。
-- 在 `.agent-handoff/work-log.md` 中只保留近期且仍相关的工作。
-- 优先更新现有条目，而不是追加重复或矛盾记录。
-- 将过时长历史移至 `.agent-handoff/archive.md`。
+- 将 `.agent-handoff/snapshot.md` 视为原地替换的当前状态，绝不追加历史快照。
+- snapshot 软限 16 KiB 或 240 行；硬限 32 KiB 或 400 行。
+- `.agent-handoff/work-log.md` 超过 64 KiB 或 30 个日期段落时轮转。
+- `.agent-handoff/validation.md` 超过 64 KiB 或 200 行表格记录时轮转。
+- `.agent-handoff/backlog.md` 和 `.agent-handoff/risks.md` 各保持在 32 KiB 以内；只有已完成 backlog 项可机械归档，risks 需要语义化审查。
+- 生成的归档块每块不超过 128 KiB，归档历史不参与正常恢复。
+- handoff 更新后，可用已安装 skill 的 `agent-handoff/scripts/maintain_handoff.py --repo <repo> --compact-if-needed` 做确定性维护。替换前先归档，无法解析的状态保留原文。
 - 在持续未中断的聊天中，仅在压缩、恢复、不确定或任务变化后重读相关 handoff 文件。"""
         closeout = """对非平凡任务，在任何最终回复前更新相关 handoff 文件，不要等待用户要求。
 
@@ -468,6 +482,7 @@ def common_rule_body(layout: str) -> str:
 - 在 `.agent-handoff/decisions.md` 中记录持久化决策。
 - 当后续事项、阻塞项、风险或未知项变化时，更新 `.agent-handoff/backlog.md` 和 `.agent-handoff/risks.md`。
 - 移除或重写会误导下一个 agent 的过时状态。
+- 可用时运行随附 handoff 维护脚本，并解决硬限或不安全清理的发现项。
 
 如果任务只是对话且项目状态没有变化，则不需要更新文件。"""
         checklist = "最终回复前，用最终任务状态、已变更文件、已运行命令/检查及结果、剩余风险、阻塞项、待确认问题或下一步，更新相关 `.agent-handoff/` 文件。"
@@ -494,6 +509,7 @@ def common_rule_body(layout: str) -> str:
         size = """- 保持 `Handoff 快照` 简短、当前且面向行动。
 - 在 `当前工作日志` 中只保留近期且仍相关的工作。
 - 优先更新现有条目，而不是追加重复或矛盾记录。
+- 将 32 KiB 视为单文档软限、64 KiB 视为硬限；超过硬限时迁移到多文档布局，而不是在文件内构建复杂轮转。
 - 在持续未中断的聊天中，仅在压缩、恢复、不确定或任务变化后重读相关章节。"""
         closeout = """对非平凡任务，在任何最终回复前更新 `AGENT_HANDOFF.md`，不要等待用户要求。
 
@@ -504,6 +520,7 @@ def common_rule_body(layout: str) -> str:
 - 为已运行的命令或人工检查添加 `验证历史` 条目。
 - 记录剩余风险、待确认问题或后续工作。
 - 移除或重写会误导下一个 agent 的过时状态。
+- 检查单文档体积，超过硬限时迁移到 multi 布局。
 
 如果任务只是对话且项目状态没有变化，则不需要更新文件。"""
         checklist = "最终回复前，用最终任务状态、已变更文件、已运行命令/检查及结果、剩余风险、阻塞项、待确认问题或下一步更新 `AGENT_HANDOFF.md`。"
@@ -596,13 +613,13 @@ def session_prompts(layout: str) -> str:
 ## 收尾
 
 ```text
-结束本轮前，更新多文档 handoff: 刷新 .agent-handoff/snapshot.md，更新 .agent-handoff/work-log.md，记录 .agent-handoff/validation.md，更新 .agent-handoff/backlog.md 和 .agent-handoff/risks.md，并移除或重写过时状态。然后报告变更内容、验证内容和剩余事项。
+结束本轮前，更新多文档 handoff: 原地替换 .agent-handoff/snapshot.md 中的当前状态，更新 .agent-handoff/work-log.md，记录 .agent-handoff/validation.md，更新 .agent-handoff/backlog.md 和 .agent-handoff/risks.md，并移除或重写过时状态。可用时运行已安装 agent-handoff 维护脚本（--repo <repo> --compact-if-needed）；解决硬限发现项，但不要丢弃无法解析或语义不安全的状态。然后报告变更内容、验证内容和剩余事项。
 ```
 
 ## Handoff 质量审查
 
 ```text
-审查并直接修复多文档 handoff，让新的 agent 可以接手。检查 AGENT_HANDOFF.md 是否仅作为索引，snapshot 是否当前且简短，下一步是否具体，路径是否可定位，决策是否有原因和证据，验证是否已记录，以及过时、矛盾、推测性或聊天记录内容是否已移除。
+审查并直接修复多文档 handoff，让新的 agent 可以接手。检查 AGENT_HANDOFF.md 是否仅作为索引，snapshot 是否为原地替换的当前状态（尽可能在 16 KiB / 240 行以内，绝不超过 32 KiB / 400 行），下一步是否具体，路径是否可定位，决策是否有原因和证据，验证是否已记录，以及过时、矛盾、推测性或聊天记录内容是否已安全归档或移除。可用时运行随附维护检查。
 ```
 """
     return """# Agent 会话提示

@@ -39,6 +39,17 @@ const PROMPT_TRIGGERS = [
 const DEFAULT_MAX_AGE_MINUTES = 120;
 const MAX_READ_BYTES = 512 * 1024;
 const INPUT_RETRY_LIMIT = 2;
+const SNAPSHOT_SOFT_BYTES = 16 * 1024;
+const SNAPSHOT_SOFT_LINES = 240;
+const SNAPSHOT_HARD_BYTES = 32 * 1024;
+const SNAPSHOT_HARD_LINES = 400;
+const WORK_LOG_MAX_BYTES = 64 * 1024;
+const WORK_LOG_MAX_SECTIONS = 30;
+const VALIDATION_MAX_BYTES = 64 * 1024;
+const VALIDATION_MAX_ROWS = 200;
+const CURRENT_STATE_MAX_BYTES = 32 * 1024;
+const SINGLE_SOFT_BYTES = 32 * 1024;
+const SINGLE_HARD_BYTES = 64 * 1024;
 
 function optionValue(name) {
   const flag = `--${name}`;
@@ -126,6 +137,70 @@ function containsAny(text, terms) {
   return terms.some((term) => lower.includes(term.toLowerCase()));
 }
 
+function fileSize(filePath) {
+  try {
+    return fs.statSync(filePath).size;
+  } catch {
+    return null;
+  }
+}
+
+function countLines(text) {
+  if (!text) return 0;
+  const lines = text.split(/\r?\n/);
+  return lines.at(-1) === "" ? lines.length - 1 : lines.length;
+}
+
+function addMultiCapacityWarnings(health) {
+  const snapshotPath = path.join(health.handoffDir, "snapshot.md");
+  const snapshotSize = fileSize(snapshotPath);
+  if (snapshotSize !== null) {
+    const snapshotLines = countLines(readSmallText(snapshotPath));
+    const metrics = `${snapshotSize} 字节, ${snapshotLines} 行`;
+    if (snapshotSize > SNAPSHOT_HARD_BYTES || snapshotLines > SNAPSHOT_HARD_LINES) {
+      health.warnings.push(
+        `snapshot.md 超过 32 KiB / 400 行硬限（${metrics}）；收尾前请运行 handoff 维护脚本。`
+      );
+    } else if (snapshotSize > SNAPSHOT_SOFT_BYTES || snapshotLines > SNAPSHOT_SOFT_LINES) {
+      health.warnings.push(
+        `snapshot.md 超过 16 KiB / 240 行软限（${metrics}）；收尾前请压缩。`
+      );
+    }
+  }
+
+  const workLogPath = path.join(health.handoffDir, "work-log.md");
+  const workLogSize = fileSize(workLogPath);
+  if (workLogSize !== null) {
+    const sections = (readSmallText(workLogPath).match(/^## \d{4}-\d{2}-\d{2}(?:\b|\s)/gm) || []).length;
+    if (workLogSize > WORK_LOG_MAX_BYTES || sections > WORK_LOG_MAX_SECTIONS) {
+      health.warnings.push(
+        `work-log.md 超过 64 KiB 或 ${WORK_LOG_MAX_SECTIONS} 个日期段落；请轮转旧的完整段落。`
+      );
+    }
+  }
+
+  const validationPath = path.join(health.handoffDir, "validation.md");
+  const validationSize = fileSize(validationPath);
+  if (validationSize !== null) {
+    const tableRows = Math.max(
+      0,
+      readSmallText(validationPath).split(/\r?\n/).filter((line) => line.trimStart().startsWith("|")).length - 2
+    );
+    if (validationSize > VALIDATION_MAX_BYTES || tableRows > VALIDATION_MAX_ROWS) {
+      health.warnings.push(
+        `validation.md 超过 64 KiB 或 ${VALIDATION_MAX_ROWS} 行；请轮转旧的完整表格行。`
+      );
+    }
+  }
+
+  for (const name of ["backlog.md", "risks.md"]) {
+    const size = fileSize(path.join(health.handoffDir, name));
+    if (size !== null && size > CURRENT_STATE_MAX_BYTES) {
+      health.warnings.push(`${name} 超过 32 KiB 当前状态上限；需要 Agent 语义化审查。`);
+    }
+  }
+}
+
 function buildHealth(projectDir, maxAgeMinutes, parseWarning) {
   const singlePath = path.join(projectDir, "AGENT_HANDOFF.md");
   const multiIndexPath = path.join(projectDir, MULTI_INDEX);
@@ -181,6 +256,8 @@ function buildHealth(projectDir, maxAgeMinutes, parseWarning) {
     if (snapshot && !snapshot.includes("## 当前状态")) {
       health.warnings.push(".agent-handoff/snapshot.md 不包含 '## 当前状态'。");
     }
+
+    addMultiCapacityWarnings(health);
   } else {
     health.layout = "single";
 
@@ -188,6 +265,17 @@ function buildHealth(projectDir, maxAgeMinutes, parseWarning) {
       if (!content.includes(heading)) {
         health.missing.push(heading);
       }
+    }
+
+    const handoffSize = fileSize(singlePath);
+    if (handoffSize !== null && handoffSize > SINGLE_HARD_BYTES) {
+      health.warnings.push(
+        `AGENT_HANDOFF.md 超过 64 KiB 单文档硬限（${handoffSize} 字节）；请迁移到 multi 布局。`
+      );
+    } else if (handoffSize !== null && handoffSize > SINGLE_SOFT_BYTES) {
+      health.warnings.push(
+        `AGENT_HANDOFF.md 超过 32 KiB 单文档软限（${handoffSize} 字节）。`
+      );
     }
   }
 
